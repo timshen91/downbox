@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <limits.h>
 
-#define SSIZE_MAX 1
-
 class TCPSocket {
     int sockfd;
     struct sockaddr_in addr;
