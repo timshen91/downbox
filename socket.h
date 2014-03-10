@@ -34,13 +34,13 @@ public:
 	::close(sockfd);
     }
 
-    bool read(void* buff, size_t len) {
+    bool read(void* buff, ssize_t len) {
 	while (len > 0) {
-	    size_t count = len;
+	    ssize_t count = len;
 	    if (count > SSIZE_MAX) {
 		count = SSIZE_MAX;
 	    }
-	    int n = ::read(sockfd, buff, count);
+	    auto n = ::read(sockfd, buff, count);
 	    if (n < 0) {
 		perror("read");
 		return false;
@@ -48,12 +48,8 @@ public:
 	    if (n == 0) {
 		return false;
 	    }
-	    if (len < n) {
-		len = 0;
-	    } else {
-		len -= n;
-		buff = (void*)((uintptr_t)buff + count);
-	    }
+	    len -= n;
+	    buff = (void*)((uintptr_t)buff + count);
 	}
 	return true;
     }
@@ -73,12 +69,8 @@ public:
 	    if (n == 0) {
 		return false;
 	    }
-	    if (len < n) {
-		len = 0;
-	    } else {
-		len -= n;
-		buff = (void*)((uintptr_t)buff + n);
-	    }
+	    len -= n;
+	    buff = (void*)((uintptr_t)buff + n);
 	}
 	return true;
     }

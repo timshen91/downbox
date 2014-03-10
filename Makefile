@@ -1,5 +1,14 @@
-all:
-	g++ -std=c++11 server.cc -o server
-	g++ -std=c++11 client.cc -o client
+CC=g++ -std=c++11 -Wall
 
-.PHONY: all
+all: client server
+
+client: client.cc socket.h
+	$(CC) client.cc -o client
+
+server: server.cc socket.h
+	$(CC) server.cc -o server
+
+clean:
+	rm -f client server
+
+.PHONY: all clean
