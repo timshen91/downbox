@@ -6,7 +6,7 @@ client: client.cc socket.h
 	$(CC) client.cc -o client
 
 server: server.cc socket.h
-	$(CC) server.cc -o server
+	$(CC) server.cc -lpthread -o server
 
 clean:
 	rm -f client server

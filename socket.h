@@ -1,9 +1,11 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+//#include <sys/epoll.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
+//#include <vector>
 
 class TCPSocket {
     int sockfd;
@@ -81,9 +83,16 @@ public:
       }
 };
 
+// invariant: events.size() == clients.size()
 class TCPServer {
     int sockfd;
+//    int epollfd;
     struct sockaddr_in addr;
+//    std::vector<struct epoll_event> events;
+//    std::vector<TCPSocket> clients; // FIXME reuse
+//    std::vector<uint32_t> free_list; // reuse clients
+//
+//    struct epoll_event ev; // tmp
 
 public:
     bool init(const char* listen_addr, uint16_t port) {
@@ -110,6 +119,18 @@ public:
             perror("listen");
             return false;
         }
+//        if ((epollfd = epoll_create1(0)) < 0) {
+//            perror("epoll_create");
+//            return false;
+//        }
+//        ev.events = EPOLLIN;
+//        ev.data.u32 = 0;
+//        if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sockfd, &ev) < 0) {
+//            perror("epoll_ctl");
+//            return false;
+//        }
+//        clients.resize(1);
+//        events.resize(1);
         return true;
     }
 
@@ -121,4 +142,43 @@ public:
         socklen_t len = sizeof(cli->addr);
         return (cli->sockfd = ::accept(sockfd, (struct sockaddr*)&cli->addr, &len)) >= 0;
     }
+
+/*
+    void epoll(void (*callback)(const TCPSocket&)) {
+        int n = epoll_wait(epollfd, events.data(), events.size(), -1);
+        if (n < 0) {
+            return;
+        }
+        for (auto& it : events) {
+            if (it.data.u32 == 0) {
+                TCPSocket cli;
+                socklen_t len = sizeof(cli.addr);
+                if ((cli.sockfd = ::accept(sockfd, (struct sockaddr*)&cli.addr, &len)) < 0) {
+                    perror("accept");
+                    continue;
+                }
+                ev.events = EPOLLIN | EPOLLOUT;
+#define EPCTL \
+                    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, cli.sockfd, &ev) < 0) {\
+                        perror("epoll_ctl");\
+                        continue;\
+                    }
+                if (free_list.size() > 0) {
+                    ev.data.u32 = free_list.back();
+                    EPCTL;
+                    free_list.pop_back();
+                } else {
+                    ev.data.u32 = clients.size();
+                    EPCTL;
+                    clients.emplace_back();
+                }
+#undef EPCTL
+                clients[ev.data.u32] = cli;
+                events.resize(clients.size());
+            } else {
+                callback(clients[it.data.u32], it.events);
+            }
+        }
+    }
+*/
 };
