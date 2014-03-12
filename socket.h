@@ -1,3 +1,6 @@
+#ifndef __SOCKET_H__
+#define __SOCKET_H__
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -5,13 +8,49 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
-//#include <vector>
+#include <vector>
 
 class TCPSocket {
     int sockfd;
     struct sockaddr_in addr;
 
     friend class TCPServer;
+
+    bool read(void* buff, ssize_t len) {
+        while (len > 0) {
+            ssize_t count = len;
+            if (count > SSIZE_MAX) {
+                count = SSIZE_MAX;
+            }
+            auto n = ::read(sockfd, buff, count);
+            if (n < 0) {
+                perror("read");
+                return false;
+            }
+            if (n == 0) {
+                return false;
+            }
+            len -= n;
+            buff = (void*)((uintptr_t)buff + count);
+        }
+        return true;
+    }
+
+    bool write(const void* buff, int len) {
+        while (len > 0) {
+            int n = ::write(sockfd, buff, len);
+            if (n < 0) {
+                perror("write");
+                return false;
+            }
+            if (n == 0) {
+                return false;
+            }
+            len -= n;
+            buff = (void*)((uintptr_t)buff + n);
+        }
+        return true;
+    }
 
 public:
     bool init(const char* dest_addr, uint16_t port) {
@@ -36,43 +75,19 @@ public:
         ::close(sockfd);
     }
 
-    bool read(void* buff, ssize_t len) {
-        while (len > 0) {
-            ssize_t count = len;
-            if (count > SSIZE_MAX) {
-                count = SSIZE_MAX;
-            }
-            auto n = ::read(sockfd, buff, count);
-            if (n < 0) {
-                perror("read");
-                return false;
-            }
-            if (n == 0) {
-                return false;
-            }
-            len -= n;
-            buff = (void*)((uintptr_t)buff + count);
-        }
-        return true;
-    }
-
     template<typename T>
       bool read(T* obj) {
           return read(obj, sizeof(T));
       }
 
-    bool write(const void* buff, int len) {
-        while (len > 0) {
-            int n = ::write(sockfd, buff, len);
-            if (n < 0) {
-                perror("write");
-                return false;
-            }
-            if (n == 0) {
-                return false;
-            }
-            len -= n;
-            buff = (void*)((uintptr_t)buff + n);
+    bool readbytes(std::vector<char>* v) {
+        ssize_t len;
+        if (!read(&len)) {
+            return false;
+        }
+        v->resize(len);
+        if (!read(v->data(), len)) {
+            return false;
         }
         return true;
     }
@@ -81,6 +96,17 @@ public:
       bool write(const T& obj) {
           return write(&obj, sizeof(T));
       }
+
+    bool writebytes(const std::vector<char>& v) {
+        ssize_t len = v.size();
+        if (!write(len)) {
+            return false;
+        }
+        if (!write(v.data(), len)) {
+            return false;
+        }
+        return true;
+    }
 };
 
 // invariant: events.size() == clients.size()
@@ -89,7 +115,7 @@ class TCPServer {
 //    int epollfd;
     struct sockaddr_in addr;
 //    std::vector<struct epoll_event> events;
-//    std::vector<TCPSocket> clients; // FIXME reuse
+//    std::vector<TCPSocket> clients;
 //    std::vector<uint32_t> free_list; // reuse clients
 //
 //    struct epoll_event ev; // tmp
@@ -182,3 +208,5 @@ public:
     }
 */
 };
+
+#endif
