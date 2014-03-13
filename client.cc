@@ -7,12 +7,12 @@
 #include "protocol.h"
 using namespace std;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) { 
     if (argc != 3) {
         cout << "Usage : " << argv[0] << " create|delete filename\n";
         return 1;
     }
-    string cmd(argv[1]);
+    string cmd(argv[1]); //Q
     if (cmd != "create" && cmd != "delete") {
         return 1;
     }
