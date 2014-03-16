@@ -1,6 +1,8 @@
+#include <sys/stat.h>
 #include <signal.h>
 #include <thread>
 #include <fstream>
+#include <iostream>
 #include "socket.h"
 #include "protocol.h"
 using namespace std;
@@ -24,15 +26,6 @@ using namespace std;
 //    return move(ret);
 //}
 
-bool validate(const string& s) { // TODO
-    for (auto c : s) {
-        if (c == '\0') {
-            return false;
-        }
-    }
-    return true;
-}
-
 #define ensure(cond) do { if (!(cond)) goto fail; } while (0)
 void work(TCPSocket cli) {
     char header;
@@ -42,20 +35,31 @@ void work(TCPSocket cli) {
         switch (header) {
         case CREATE_FILE:
             ensure(cli.read(&s));
-            ensure(validate(s));
             {
                 ofstream fout(s.data());
-                cli.read(&s);
-                fout.write(s.data(), s.size());
+                ensure(!fout.fail());
+                ensure(cli.read(&s));
+                ensure(fout.write(s.data(), s.size()));
                 fout.close();
             }
             break;
         case CREATE_DIRECTORY:
+            ensure(cli.read(&s));
+            ensure(mkdir(s.data(), 0755) >= 0);
             break;
         case DELETE:
             ensure(cli.read(&s));
-            ensure(validate(s));
-            unlink(s.data());
+            {
+                struct stat st;
+                ensure(stat(s.data(), &st) >= 0);
+                if (S_ISDIR(st.st_mode)) {
+                    ensure(rmdir(s.data()) >= 0);
+                } else if (S_ISREG(st.st_mode)) {
+                    ensure(unlink(s.data()) >= 0);
+                } else {
+                    goto fail;
+                }
+            }
             break;
         default: goto fail;
         }
@@ -63,6 +67,7 @@ void work(TCPSocket cli) {
 fail:
     cli.close();
 }
+#undef ensure
 
 TCPServer server;
 
