@@ -2,10 +2,10 @@ CC=g++ -std=c++11 -Wall
 
 all: client server
 
-client: client.cc socket.h
+client: client.cc socket.h protocol.h
 	$(CC) client.cc -o client
 
-server: server.cc socket.h
+server: server.cc socket.h protocol.h
 	$(CC) server.cc -lpthread -o server
 
 clean:

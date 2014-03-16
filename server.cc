@@ -1,47 +1,62 @@
 #include <signal.h>
-#include <vector>
-#include <iostream>
-#include <fstream>
 #include <thread>
+#include <fstream>
 #include "socket.h"
 #include "protocol.h"
 using namespace std;
 
-const char work_path[] = "/tmp/";
+#define BUF_SIZE 4096
+#define WORK_PATH "/tmp"
+#define ADDR "0.0.0.0"
+#define PORT 9999
 
-bool validate(const vector<char> v) {
-    for (auto c : v) {
-        if (c == '/' || c == '\0') {
+//vector<string> split(const string& s, char ch) {
+//    size_t last = 0;
+//    vector<string> ret;
+//    size_t i;
+//    for (i = 0; i < s.size(); i++) {
+//        if (s[i] == ch) {
+//            ret.emplace_back(s.substr(last, i - last));
+//            last = i+1;
+//        }
+//    }
+//    ret.emplace_back(s.substr(last, i - last));
+//    return move(ret);
+//}
+
+bool validate(const string& s) { // TODO
+    for (auto c : s) {
+        if (c == '\0') {
             return false;
         }
     }
-    return true; // TODO
+    return true;
 }
 
 #define ensure(cond) do { if (!(cond)) goto fail; } while (0)
 void work(TCPSocket cli) {
     char header;
-    vector<char> v;
+    string s;
     while (1) {
         ensure(cli.read(&header));
         switch (header) {
         case CREATE_FILE:
-          ensure(cli.readbytes(&v));
-          ensure(validate(v));
-          {
-              v.push_back('\0');
-              ofstream fout(v.data());
-              cli.readbytes(&v);
-              fout.write(v.data(), v.size());
-              fout.close();
-          }
-          break;
+            ensure(cli.read(&s));
+            ensure(validate(s));
+            {
+                ofstream fout(s.data());
+                cli.read(&s);
+                fout.write(s.data(), s.size());
+                fout.close();
+            }
+            break;
+        case CREATE_DIRECTORY:
+            break;
         case DELETE:
-          ensure(cli.readbytes(&v));
-          ensure(validate(v));
-          v.push_back('\0');
-          unlink((char*)v.data());
-          break;
+            ensure(cli.read(&s));
+            ensure(validate(s));
+            unlink(s.data());
+            break;
         default: goto fail;
         }
     }
@@ -60,7 +75,7 @@ void sigint_handler(int signal) {
 }
 
 int main() {
-    if (chdir(work_path) < 0) {
+    if (chroot(WORK_PATH) < 0 || chdir("/") < 0) {
         return 1;
     }
     {
@@ -71,7 +86,7 @@ int main() {
             return 1;
         }
     }
-    if (!server.init("0.0.0.0", 9999)) {
+    if (!server.init(ADDR, PORT)) {
         return 1;
     }
     TCPSocket cli;

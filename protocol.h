@@ -3,6 +3,7 @@
 
 enum Protocol : char {
     CREATE_FILE,
+    CREATE_DIRECTORY,
     DELETE,
 };
 

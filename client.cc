@@ -2,7 +2,6 @@
 #include <iostream>
 #include <iterator>
 #include <string>
-#include <vector>
 #include "socket.h"
 #include "protocol.h"
 using namespace std;
@@ -16,33 +15,29 @@ int main(int argc, char* argv[]) {
     if (cmd != "create" && cmd != "delete") {
         return 1;
     }
-    string s;
     TCPSocket conn;
     if (!conn.init("127.0.0.1", 9999)) {
         return 1;
     }
     char header;
-    vector<char> v;
+    string s;
     if (cmd == "create") {
         header = CREATE_FILE;
         conn.write(header);
-        string s(argv[2]);
-        v.assign(s.begin(), s.end());
-        conn.writebytes(v);
-        v.clear();
+        s.assign(argv[2]);
+        conn.write(s);
         ifstream fin(argv[2]);
         fin.seekg(0, ifstream::end);
-        v.resize(fin.tellg());
+        s.resize(fin.tellg());
         fin.seekg(0, ifstream::beg);
-        fin.read(v.data(), v.size());
+        fin.read(&s[0], s.size());
         fin.close();
-        conn.writebytes(v);
+        conn.write(s);
     } else {
         header = DELETE;
         conn.write(header);
-        string s(argv[2]);
-        v.assign(s.begin(), s.end());
-        conn.writebytes(v);
+        s.assign(argv[2]);
+        conn.write(s);
     }
     conn.close();
     return 0;
