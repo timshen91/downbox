@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
-#include <string>
+#include <type_traits>
 
 class TCPSocket {
     int sockfd;
@@ -75,37 +75,10 @@ public:
     }
 
     template<typename T>
-    typename std::enable_if<std::is_integral<T>::value, bool>::type read(T* obj) {
-        return read_impl(obj, sizeof(*obj));
-    }
-
-    bool read(std::string* s) {
-        size_t len;
-        if (!read(&len)) {
-            return false;
-        }
-        s->resize(len);
-        if (!read_impl(&((*s)[0]), len)) {
-            return false;
-        }
-        (*s)[len] = '\0';
-        return true;
-    }
+    bool read(T* obj);
 
     template<typename T>
-    typename std::enable_if<std::is_integral<T>::value, bool>::type write(const T& obj) {
-        return write_impl(&obj, sizeof(obj));
-    }
-
-    bool write(const std::string& s) {
-        if (!write(s.size())) {
-            return false;
-        }
-        if (!write_impl(s.data(), s.size())) {
-            return false;
-        }
-        return true;
-    }
+    bool write(const T& obj);
 };
 
 class TCPServer {

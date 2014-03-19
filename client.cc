@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
         fin.close();
         conn.write(s);
     } else if (cmd == "mkdir") {
-        header = CREATE_DIRECTORY;
+        header = CREATE_DIR;
         conn.write(header);
         s.assign(argv[2]);
         conn.write(s);

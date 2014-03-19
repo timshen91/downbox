@@ -43,7 +43,7 @@ void work(TCPSocket cli) {
                 fout.close();
             }
             break;
-        case CREATE_DIRECTORY:
+        case CREATE_DIR:
             ensure(cli.read(&s));
             ensure(mkdir(s.data(), 0755) >= 0);
             break;
