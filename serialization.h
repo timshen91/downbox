@@ -15,6 +15,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, bool>::type write(TCPSocke
     return cli->write(&obj, sizeof(T));
 }
 
+inline
 bool read(TCPSocket* cli, std::string* s) {
     size_t len;
     if (!read(cli, &len)) {
@@ -28,10 +29,12 @@ bool read(TCPSocket* cli, std::string* s) {
     return true;
 }
 
+inline
 bool write(TCPSocket* cli, const std::string& s) {
     return write(cli, s.size()) && cli->write(s.data(), s.size());
 }
 
+inline
 bool read(TCPSocket* cli, std::vector<char>* s) {
     size_t len;
     if (!read(cli, &len)) {
@@ -44,6 +47,7 @@ bool read(TCPSocket* cli, std::vector<char>* s) {
     return true;
 }
 
+inline
 bool write(TCPSocket* cli, const std::vector<char>& s) {
     return write(cli, s.size()) && cli->write(s.data(), s.size());
 }
