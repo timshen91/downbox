@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include "tuple.h"
 
 #pragma pack(push, 1)
 
@@ -13,48 +14,10 @@ enum Protocol : char {
     DELETE,
 };
 
-struct ReqCreateFile {
-    std::string path;
-    std::vector<char> content;
-};
-
-template<>
-bool TCPSocket::read<ReqCreateFile>(ReqCreateFile* req) {
-    return read(&req->path) && read(&req->content);
-}
-
-template<>
-bool TCPSocket::write<ReqCreateFile>(const ReqCreateFile& req) {
-    return write(req.path) && write(req.content);
-}
-
-struct ReqCreateDir {
-    std::string path;
-};
-
-template<>
-bool TCPSocket::read<ReqCreateDir>(ReqCreateDir* req) {
-    return read(&req->path);
-}
-
-template<>
-bool TCPSocket::write<ReqCreateDir>(const ReqCreateDir& req) {
-    return write(req.path);
-}
-
-struct ReqDelete {
-    std::string path;
-};
-
-template<>
-bool TCPSocket::read<ReqDelete>(ReqDelete* req) {
-    return read(&req->path);
-}
-
-template<>
-bool TCPSocket::write<ReqDelete>(const ReqDelete& req) {
-    return write(req.path);
-}
+typedef Tuple<std::string, unsigned long long> ReqList; // File path, then date
+typedef Tuple<std::string, std::vector<char>> ReqCreateFile; // File path, then content
+typedef std::string ReqCreateDir; // Directory path
+typedef std::string ReqDelete; // File/directory path
 
 #pragma pack(pop)
 

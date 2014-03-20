@@ -4,6 +4,7 @@
 #include <string>
 #include "socket.h"
 #include "protocol.h"
+#include "serialization.h"
 using namespace std;
 
 void print_usage(char* argv[]) {
@@ -21,26 +22,26 @@ int main(int argc, char* argv[]) {
     }
     string cmd(argv[1]);
     if (cmd == "create") {
-        conn.write((char)CREATE_FILE);
+        write(&conn, (char)CREATE_FILE);
         ReqCreateFile req;
-        req.path.assign(argv[2]);
+        req.first.assign(argv[2]);
         ifstream fin(argv[2]);
         fin.seekg(0, ifstream::end);
-        req.content.resize(fin.tellg());
+        req.second.first.resize(fin.tellg());
         fin.seekg(0, ifstream::beg);
-        fin.read(req.content.data(), req.content.size());
+        fin.read(req.second.first.data(), req.second.first.size());
         fin.close();
-        conn.write(req);
+        write(&conn, req);
     } else if (cmd == "mkdir") {
-        conn.write((char)CREATE_DIR);
+        write(&conn, (char)CREATE_DIR);
         ReqCreateDir req;
-        req.path.assign(argv[2]);
-        conn.write(req);
+        req.assign(argv[2]);
+        write(&conn, req);
     } else if (cmd == "delete") {
-        conn.write((char)DELETE);
+        write(&conn, (char)DELETE);
         ReqDelete req;
-        req.path.assign(argv[2]);
-        conn.write(req);
+        req.assign(argv[2]);
+        write(&conn, req);
     } else {
         print_usage(argv);
         conn.close();

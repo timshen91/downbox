@@ -5,6 +5,7 @@
 #include <iostream>
 #include "socket.h"
 #include "protocol.h"
+#include "serialization.h"
 using namespace std;
 
 #define BUF_SIZE 4096
@@ -30,35 +31,35 @@ using namespace std;
 void work(TCPSocket cli) {
     char header;
     while (1) {
-        ensure(cli.read(&header));
+        ensure(read(&cli, &header));
         switch (header) {
         case CREATE_FILE:
             {
                 ReqCreateFile req;
-                ensure(cli.read(&req));
-                ofstream fout(req.path.data());
+                ensure(read(&cli, &req));
+                ofstream fout(req.first.data());
                 ensure(!fout.fail());
-                ensure(fout.write(req.content.data(), req.content.size()));
+                ensure(fout.write(req.second.first.data(), req.second.first.size()));
                 fout.close();
             }
             break;
         case CREATE_DIR:
             {
                 ReqCreateDir req;
-                ensure(cli.read(&req));
-                ensure(mkdir(req.path.data(), 0755) >= 0);
+                ensure(read(&cli, &req));
+                ensure(mkdir(req.data(), 0755) >= 0);
             }
             break;
         case DELETE:
             {
                 ReqDelete req;
-                ensure(cli.read(&req));
+                ensure(read(&cli, &req));
                 struct stat st;
-                ensure(stat(req.path.data(), &st) >= 0);
+                ensure(stat(req.data(), &st) >= 0);
                 if (S_ISDIR(st.st_mode)) {
-                    ensure(rmdir(req.path.data()) >= 0);
+                    ensure(rmdir(req.data()) >= 0);
                 } else if (S_ISREG(st.st_mode)) {
-                    ensure(unlink(req.path.data()) >= 0);
+                    ensure(unlink(req.data()) >= 0);
                 } else {
                     goto fail;
                 }

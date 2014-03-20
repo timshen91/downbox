@@ -15,42 +15,6 @@ class TCPSocket {
 
     friend class TCPServer;
 
-    bool read_impl(void* buff, ssize_t len) {
-        while (len > 0) {
-            ssize_t count = len;
-            if (count > SSIZE_MAX) {
-                count = SSIZE_MAX;
-            }
-            auto n = ::read(sockfd, buff, count);
-            if (n < 0) {
-                perror("read");
-                return false;
-            }
-            if (n == 0) {
-                return false;
-            }
-            len -= n;
-            buff = (void*)((uintptr_t)buff + count);
-        }
-        return true;
-    }
-
-    bool write_impl(const void* buff, int len) {
-        while (len > 0) {
-            int n = ::write(sockfd, buff, len);
-            if (n < 0) {
-                perror("write");
-                return false;
-            }
-            if (n == 0) {
-                return false;
-            }
-            len -= n;
-            buff = (void*)((uintptr_t)buff + n);
-        }
-        return true;
-    }
-
 public:
     bool init(const char* dest_addr, uint16_t port) {
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -74,11 +38,41 @@ public:
         ::close(sockfd);
     }
 
-    template<typename T>
-    bool read(T* obj);
+    bool read(void* buff, ssize_t len) {
+        while (len > 0) {
+            ssize_t count = len;
+            if (count > SSIZE_MAX) {
+                count = SSIZE_MAX;
+            }
+            auto n = ::read(sockfd, buff, count);
+            if (n < 0) {
+                perror("read");
+                return false;
+            }
+            if (n == 0) {
+                return false;
+            }
+            len -= n;
+            buff = (void*)((uintptr_t)buff + count);
+        }
+        return true;
+    }
 
-    template<typename T>
-    bool write(const T& obj);
+    bool write(const void* buff, int len) {
+        while (len > 0) {
+            int n = ::write(sockfd, buff, len);
+            if (n < 0) {
+                perror("write");
+                return false;
+            }
+            if (n == 0) {
+                return false;
+            }
+            len -= n;
+            buff = (void*)((uintptr_t)buff + n);
+        }
+        return true;
+    }
 };
 
 class TCPServer {
