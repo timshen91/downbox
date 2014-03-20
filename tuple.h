@@ -17,14 +17,14 @@ struct get_type<0, T> {
 
 template<size_t i, typename T>
 struct get_impl {
-    constexpr typename get_type<i, T>::type& operator()(T& t) {
-        return get_impl<i-1, typename T::second_type>()(t.second);
+    static constexpr typename get_type<i, T>::type& get(T& t) {
+        return get_impl<i-1, typename T::second_type>::get(t.second);
     }
 };
 
 template<typename T>
 struct get_impl<0, T> {
-    constexpr typename get_type<0, T>::type& operator()(T& t) {
+    static constexpr typename get_type<0, T>::type& get(T& t) {
         return t.first;
     }
 };
@@ -49,7 +49,7 @@ class Tuple {
 public:
     template<size_t i>
     typename get_type<i, Tuple<T, Args...>>::type& get() {
-        return get_impl<i, Tuple<T, Args...>>()(*this);
+        return get_impl<i, Tuple<T, Args...>>::get(*this);
     }
 };
 
@@ -69,7 +69,7 @@ class Tuple<T> {
 public:
     template<size_t i>
     typename get_type<i, Tuple<T>>::type& get() {
-        return get_impl<i, Tuple<T>>()(*this);
+        return get_impl<i, Tuple<T>>::get(*this);
     }
 };
 
