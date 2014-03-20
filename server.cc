@@ -37,9 +37,9 @@ void work(TCPSocket cli) {
             {
                 ReqCreateFile req;
                 ensure(read(&cli, &req));
-                ofstream fout(req.first.data());
+                ofstream fout(req.get<0>().data());
                 ensure(!fout.fail());
-                ensure(fout.write(req.second.first.data(), req.second.first.size()));
+                ensure(fout.write(req.get<1>().data(), req.get<1>().size()));
                 fout.close();
             }
             break;

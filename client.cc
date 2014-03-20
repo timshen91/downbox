@@ -25,12 +25,12 @@ int main(int argc, char* argv[]) {
     if (cmd == "create") {
         ensure(write(&conn, (char)CREATE_FILE));
         ReqCreateFile req;
-        req.first.assign(argv[2]);
+        req.get<0>().assign(argv[2]);
         ifstream fin(argv[2]);
         fin.seekg(0, ifstream::end);
-        req.second.first.resize(fin.tellg());
+        req.get<1>().resize(fin.tellg());
         fin.seekg(0, ifstream::beg);
-        fin.read(req.second.first.data(), req.second.first.size());
+        fin.read(req.get<1>().data(), req.get<1>().size());
         fin.close();
         ensure(write(&conn, req));
     } else if (cmd == "mkdir") {
