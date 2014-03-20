@@ -29,33 +29,36 @@ using namespace std;
 #define ensure(cond) do { if (!(cond)) goto fail; } while (0)
 void work(TCPSocket cli) {
     char header;
-    string s;
     while (1) {
         ensure(cli.read(&header));
         switch (header) {
         case CREATE_FILE:
-            ensure(cli.read(&s));
             {
-                ofstream fout(s.data());
+                ReqCreateFile req;
+                ensure(cli.read(&req));
+                ofstream fout(req.path.data());
                 ensure(!fout.fail());
-                ensure(cli.read(&s));
-                ensure(fout.write(s.data(), s.size()));
+                ensure(fout.write(req.content.data(), req.content.size()));
                 fout.close();
             }
             break;
         case CREATE_DIR:
-            ensure(cli.read(&s));
-            ensure(mkdir(s.data(), 0755) >= 0);
+            {
+                ReqCreateDir req;
+                ensure(cli.read(&req));
+                ensure(mkdir(req.path.data(), 0755) >= 0);
+            }
             break;
         case DELETE:
-            ensure(cli.read(&s));
             {
+                ReqDelete req;
+                ensure(cli.read(&req));
                 struct stat st;
-                ensure(stat(s.data(), &st) >= 0);
+                ensure(stat(req.path.data(), &st) >= 0);
                 if (S_ISDIR(st.st_mode)) {
-                    ensure(rmdir(s.data()) >= 0);
+                    ensure(rmdir(req.path.data()) >= 0);
                 } else if (S_ISREG(st.st_mode)) {
-                    ensure(unlink(s.data()) >= 0);
+                    ensure(unlink(req.path.data()) >= 0);
                 } else {
                     goto fail;
                 }

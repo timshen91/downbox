@@ -42,6 +42,20 @@ bool TCPSocket::write<ReqCreateDir>(const ReqCreateDir& req) {
     return write(req.path);
 }
 
+struct ReqDelete {
+    std::string path;
+};
+
+template<>
+bool TCPSocket::read<ReqDelete>(ReqDelete* req) {
+    return read(&req->path);
+}
+
+template<>
+bool TCPSocket::write<ReqDelete>(const ReqDelete& req) {
+    return write(req.path);
+}
+
 #pragma pack(pop)
 
 #endif
