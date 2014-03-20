@@ -11,6 +11,7 @@ void print_usage(char* argv[]) {
     cout << "Usage : " << argv[0] << " create|mkdir|delete filename\n";
 }
 
+#define ensure(cond) do { if (!(cond)) goto fail; } while (0)
 int main(int argc, char* argv[]) { 
     if (argc != 3) {
         print_usage(argv);
@@ -22,7 +23,7 @@ int main(int argc, char* argv[]) {
     }
     string cmd(argv[1]);
     if (cmd == "create") {
-        write(&conn, (char)CREATE_FILE);
+        ensure(write(&conn, (char)CREATE_FILE));
         ReqCreateFile req;
         req.first.assign(argv[2]);
         ifstream fin(argv[2]);
@@ -31,22 +32,25 @@ int main(int argc, char* argv[]) {
         fin.seekg(0, ifstream::beg);
         fin.read(req.second.first.data(), req.second.first.size());
         fin.close();
-        write(&conn, req);
+        ensure(write(&conn, req));
     } else if (cmd == "mkdir") {
-        write(&conn, (char)CREATE_DIR);
+        ensure(write(&conn, (char)CREATE_DIR));
         ReqCreateDir req;
         req.assign(argv[2]);
-        write(&conn, req);
+        ensure(write(&conn, req));
     } else if (cmd == "delete") {
-        write(&conn, (char)DELETE);
+        ensure(write(&conn, (char)DELETE));
         ReqDelete req;
         req.assign(argv[2]);
-        write(&conn, req);
+        ensure(write(&conn, req));
     } else {
         print_usage(argv);
-        conn.close();
+        goto fail;
         return 1;
     }
     conn.close();
     return 0;
+fail:
+    conn.close();
+    return 1;
 }
