@@ -75,10 +75,10 @@ static void sigint_handler(int signal) {
 }
 
 static bool (*cb_table[])(TCPSocket*) = {
-    &handle_list,
-    &handle_create_file,
-    &handle_mkdir,
-    &handle_delete,
+    [LIST] = &handle_list,
+    [CREATE_FILE] = &handle_create_file,
+    [CREATE_DIR] = &handle_mkdir,
+    [DELETE] = &handle_delete,
 };
 
 int main() {
