@@ -93,19 +93,22 @@ int main() {
         return 1;
     }
     while (1) {
-        TCPSocket cli = server.accept();
-        thread([=]() mutable {
-            try {
-                while (1) {
-                    uint8_t header;
-                    cli >> header;
-                    ensure(header < PROTOCOL_COUNT);
-                    (*cb_table[header])(cli);
+        try {
+            TCPSocket cli = server.accept();
+            thread([=]() mutable {
+                try {
+                    while (1) {
+                        uint8_t header;
+                        cli >> header;
+                        ensure(header < PROTOCOL_COUNT);
+                        (*cb_table[header])(cli);
+                    }
+                } catch (nullptr_t) {
                 }
-            } catch (nullptr_t) {
-            }
-            cli.close();
-        }).detach();
+                cli.close();
+            }).detach();
+        } catch (...) {
+        }
     }
     return 0;
 }

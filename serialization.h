@@ -7,13 +7,13 @@
 
 template<typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator>>(TCPSocket& cli, T& obj) {
-    cli.read(&obj, sizeof(T));
+    cli.read(&obj, 1);
     return cli;
 }
 
 template<typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator<<(TCPSocket& cli, const T& obj) {
-    cli.write(&obj, sizeof(T));
+    cli.write(&obj, 1);
     return cli;
 }
 
@@ -22,7 +22,7 @@ TCPSocket& operator>>(TCPSocket& cli, std::string& s) {
     size_t len;
     cli >> len;
     s.resize(len);
-    cli.read(&s.front(), len);
+    cli.read(&s[0], len);
     s[len] = '\0';
     return cli;
 }
@@ -34,19 +34,19 @@ TCPSocket& operator<<(TCPSocket& cli, const std::string& s) {
     return cli;
 }
 
-inline
-TCPSocket& operator>>(TCPSocket& cli, std::vector<char>& s) {
+template<typename T>
+TCPSocket& operator>>(TCPSocket& cli, std::vector<T>& v) {
     size_t len;
     cli >> len;
-    s.resize(len);
-    cli.read(s.data(), len);
+    v.resize(len);
+    cli.read(v.data(), v.size());
     return cli;
 }
 
-inline
-TCPSocket& operator<<(TCPSocket& cli, const std::vector<char>& s) {
-    cli << s.size();
-    cli.write(s.data(), s.size());
+template<typename T>
+TCPSocket& operator<<(TCPSocket& cli, const std::vector<T>& v) {
+    cli << v.size();
+    cli.write(v.data(), v.size());
     return cli;
 }
 

@@ -14,6 +14,40 @@ class TCPSocket {
 
     friend class TCPServer;
 
+    void read_impl(void* buff, ssize_t len) {
+        while (len > 0) {
+            ssize_t count = len;
+            if (count > SSIZE_MAX) {
+                count = SSIZE_MAX;
+            }
+            auto n = ::read(sockfd, buff, count);
+            if (n < 0) {
+                perror("read");
+                throw nullptr;
+            }
+            if (n == 0) {
+                throw nullptr;
+            }
+            len -= n;
+            buff = (void*)((uintptr_t)buff + count);
+        }
+    }
+
+    void write_impl(const void* buff, ssize_t len) {
+        while (len > 0) {
+            ssize_t n = ::write(sockfd, buff, len);
+            if (n < 0) {
+                perror("write");
+                throw nullptr;
+            }
+            if (n == 0) {
+                throw nullptr;
+            }
+            len -= n;
+            buff = (void*)((uintptr_t)buff + n);
+        }
+    }
+
 public:
     bool init(const char* dest_addr, uint16_t port) {
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -38,44 +72,33 @@ public:
         ::close(sockfd);
     }
 
-    void read(void* buff, ssize_t len) {
-        while (len > 0) {
-            ssize_t count = len;
-            if (count > SSIZE_MAX) {
-                count = SSIZE_MAX;
-            }
-            auto n = ::read(sockfd, buff, count);
-            if (n < 0) {
-                perror("read");
-                throw nullptr;
-            }
-            if (n == 0) {
-                throw nullptr;
-            }
-            len -= n;
-            buff = (void*)((uintptr_t)buff + count);
+    template<typename T>
+    typename std::enable_if<!std::is_arithmetic<T>::value, void>::type read(T* arr, size_t len) {
+        for (size_t i = 0; i < len; i++) {
+            *this >> arr[i];
         }
     }
 
-    void write(const void* buff, int len) {
-        while (len > 0) {
-            int n = ::write(sockfd, buff, len);
-            if (n < 0) {
-                perror("write");
-                throw nullptr;
-            }
-            if (n == 0) {
-                throw nullptr;
-            }
-            len -= n;
-            buff = (void*)((uintptr_t)buff + n);
+    template<typename T>
+    typename std::enable_if<!std::is_arithmetic<T>::value, void>::type write(const T* arr, size_t len) {
+        for (size_t i = 0; i < len; i++) {
+            *this << arr[i];
         }
+    }
+
+    template<typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value, void>::type read(T* arr, size_t len) {
+        read_impl(arr, len * sizeof(T));
+    }
+
+    template<typename T>
+    typename std::enable_if<std::is_arithmetic<T>::value, void>::type write(const T* arr, size_t len) {
+        write_impl(arr, len * sizeof(T));
     }
 };
 
 class TCPServer {
     int sockfd;
-    struct sockaddr_in addr;
 
 public:
     bool init(const char* listen_addr, uint16_t port) {
@@ -88,6 +111,7 @@ public:
             perror("setsockopt");
             return false;
         }
+        struct sockaddr_in addr;
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
         if (inet_aton(listen_addr, &addr.sin_addr) == 0) {
