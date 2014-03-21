@@ -1,4 +1,5 @@
 #include <sys/stat.h>
+#include <dirent.h>
 #include <signal.h>
 #include <thread>
 #include <fstream>
@@ -29,6 +30,25 @@ using namespace std;
 #define ensure(cond) do { if (!(cond)) throw nullptr; } while (0)
 
 static void handle_list(TCPSocket& cli) {
+    ReqList req;
+    cli >> req;
+    DIR* dir;
+    ensure((dir = opendir(req.data())) != nullptr);
+    RespList resp;
+    struct dirent* ent;
+    while ((ent = readdir(dir)) != nullptr) {
+        const char* name = ent->d_name;
+        struct stat st;
+        if (stat((req + "/" + name).data(), &st) < 0) {
+            perror("stat");
+            continue;
+        }
+        resp.emplace_back();
+        resp.back().get<0>() = name;
+        resp.back().get<1>() = st.st_mtim.tv_sec;
+    }
+    closedir(dir);
+    cli << resp;
 }
 
 static void handle_create_file(TCPSocket& cli) {
@@ -100,7 +120,7 @@ int main() {
                     while (1) {
                         uint8_t header;
                         cli >> header;
-                        ensure(header < PROTOCOL_COUNT);
+                        ensure(header < sizeof(cb_table)/(sizeof*cb_table));
                         (*cb_table[header])(cli);
                     }
                 } catch (nullptr_t) {

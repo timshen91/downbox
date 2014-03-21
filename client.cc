@@ -7,7 +7,7 @@
 using namespace std;
 
 void print_usage(char* argv[]) {
-    cout << "Usage : " << argv[0] << " create|mkdir|delete filename\n";
+    cout << "Usage : " << argv[0] << " list|create|mkdir|delete filename\n";
 }
 
 int main(int argc, char* argv[]) { 
@@ -20,7 +20,16 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     string cmd(argv[1]);
-    if (cmd == "create") {
+    if (cmd == "list") {
+        conn << (uint8_t)LIST;
+        ReqList req = argv[2];
+        conn << req;
+        RespList resp;
+        conn >> resp;
+        for (auto& it : resp) {
+            cout << it.get<0>() << " " << it.get<1>() << "\n";
+        }
+    } else if (cmd == "create") {
         conn << (uint8_t)CREATE_FILE;
         ReqCreateFile req;
         req.get<0>().assign(argv[2]);

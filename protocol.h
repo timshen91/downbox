@@ -10,10 +10,10 @@ enum Protocol : uint8_t {
     CREATE_FILE,
     CREATE_DIR,
     DELETE,
-    PROTOCOL_COUNT,
 };
 
-typedef std::vector<Tuple<std::string, unsigned long long>> ReqList; // File path, then date
+typedef std::string ReqList; // Path
+typedef std::vector<Tuple<std::string, time_t>> RespList; // A list of "File path, then date"
 typedef Tuple<std::string, std::vector<char>> ReqCreateFile; // File path, then content
 typedef std::string ReqCreateDir; // Directory path
 typedef std::string ReqDelete; // File/directory path
