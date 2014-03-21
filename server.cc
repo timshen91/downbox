@@ -2,7 +2,6 @@
 #include <signal.h>
 #include <thread>
 #include <fstream>
-#include <iostream>
 #include "socket.h"
 #include "protocol.h"
 #include "serialization.h"
@@ -27,61 +26,60 @@ using namespace std;
 //    return move(ret);
 //}
 
-#define ensure(cond) do { if (!(cond)) goto fail; } while (0)
-void work(TCPSocket cli) {
-    char header;
-    while (1) {
-        ensure(read(&cli, &header));
-        switch (header) {
-        case CREATE_FILE:
-            {
-                ReqCreateFile req;
-                ensure(read(&cli, &req));
-                ofstream fout(req.get<0>().data());
-                ensure(!fout.fail());
-                ensure(fout.write(req.get<1>().data(), req.get<1>().size()));
-                fout.close();
-            }
-            break;
-        case CREATE_DIR:
-            {
-                ReqCreateDir req;
-                ensure(read(&cli, &req));
-                ensure(mkdir(req.data(), 0755) >= 0);
-            }
-            break;
-        case DELETE:
-            {
-                ReqDelete req;
-                ensure(read(&cli, &req));
-                struct stat st;
-                ensure(stat(req.data(), &st) >= 0);
-                if (S_ISDIR(st.st_mode)) {
-                    ensure(rmdir(req.data()) >= 0);
-                } else if (S_ISREG(st.st_mode)) {
-                    ensure(unlink(req.data()) >= 0);
-                } else {
-                    goto fail;
-                }
-            }
-            break;
-        default: goto fail;
-        }
+#define ensure(cond) do { if (!(cond)) return false; } while (0)
+static bool handle_list(TCPSocket* cli) {
+    return false;
+}
+
+static bool handle_create_file(TCPSocket* cli) {
+    ReqCreateFile req;
+    ensure(read(cli, &req));
+    ofstream fout(req.get<0>().data());
+    ensure(!fout.fail());
+    ensure(fout.write(req.get<1>().data(), req.get<1>().size()));
+    fout.close();
+    return true;
+}
+
+static bool handle_mkdir(TCPSocket* cli) {
+    ReqCreateDir req;
+    ensure(read(cli, &req));
+    ensure(mkdir(req.data(), 0755) >= 0);
+    return true;
+}
+
+static bool handle_delete(TCPSocket* cli) {
+    ReqDelete req;
+    ensure(read(cli, &req));
+    struct stat st;
+    ensure(stat(req.data(), &st) >= 0);
+    if (S_ISDIR(st.st_mode)) {
+        ensure(rmdir(req.data()) >= 0);
+    } else if (S_ISREG(st.st_mode)) {
+        ensure(unlink(req.data()) >= 0);
+    } else {
+        return false;
     }
-fail:
-    cli.close();
+    return true;
 }
 #undef ensure
 
 TCPServer server;
 
-void sigint_handler(int signal) {
+static void sigint_handler(int signal) {
     if (signal != SIGINT) {
         return;
     }
     server.close();
     exit(0);
 }
+
+static bool (*cb_table[])(TCPSocket*) = {
+    &handle_list,
+    &handle_create_file,
+    &handle_mkdir,
+    &handle_delete,
+};
 
 int main() {
     if (chroot(WORK_PATH) < 0 || chdir("/") < 0) {
@@ -101,7 +99,13 @@ int main() {
     TCPSocket cli;
     while (1) {
         if (server.accept(&cli)) {
-            thread(work, cli).detach();
+            thread([=]() mutable {
+                unsigned char header;
+                while (read(&cli, &header) &&
+                       header < PROTOCOL_COUNT &&
+                       (*cb_table[header])(&cli));
+                cli.close();
+            }).detach();
         }
     }
     return 0;

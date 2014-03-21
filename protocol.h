@@ -7,11 +7,12 @@
 
 #pragma pack(push, 1)
 
-enum Protocol : char {
+enum Protocol : unsigned char {
     LIST,
     CREATE_FILE,
     CREATE_DIR,
     DELETE,
+    PROTOCOL_COUNT,
 };
 
 typedef Tuple<std::string, unsigned long long> ReqList; // File path, then date

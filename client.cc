@@ -1,7 +1,6 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
-#include <string>
 #include "socket.h"
 #include "protocol.h"
 #include "serialization.h"
