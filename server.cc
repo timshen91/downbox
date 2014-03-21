@@ -26,31 +26,29 @@ using namespace std;
 //    return move(ret);
 //}
 
-#define ensure(cond) do { if (!(cond)) return false; } while (0)
-static bool handle_list(TCPSocket* cli) {
-    return false;
+#define ensure(cond) do { if (!(cond)) throw nullptr; } while (0)
+
+static void handle_list(TCPSocket& cli) {
 }
 
-static bool handle_create_file(TCPSocket* cli) {
+static void handle_create_file(TCPSocket& cli) {
     ReqCreateFile req;
-    ensure(read(cli, &req));
+    cli >> req;
     ofstream fout(req.get<0>().data());
-    ensure(!fout.fail());
-    ensure(fout.write(req.get<1>().data(), req.get<1>().size()));
+    auto res = fout.fail() || !fout.write(req.get<1>().data(), req.get<1>().size());
     fout.close();
-    return true;
+    ensure(res);
 }
 
-static bool handle_mkdir(TCPSocket* cli) {
+static void handle_mkdir(TCPSocket& cli) {
     ReqCreateDir req;
-    ensure(read(cli, &req));
+    cli >> req;
     ensure(mkdir(req.data(), 0755) >= 0);
-    return true;
 }
 
-static bool handle_delete(TCPSocket* cli) {
+static void handle_delete(TCPSocket& cli) {
     ReqDelete req;
-    ensure(read(cli, &req));
+    cli >> req;
     struct stat st;
     ensure(stat(req.data(), &st) >= 0);
     if (S_ISDIR(st.st_mode)) {
@@ -58,11 +56,9 @@ static bool handle_delete(TCPSocket* cli) {
     } else if (S_ISREG(st.st_mode)) {
         ensure(unlink(req.data()) >= 0);
     } else {
-        return false;
+        throw nullptr;
     }
-    return true;
 }
-#undef ensure
 
 TCPServer server;
 
@@ -74,7 +70,7 @@ static void sigint_handler(int signal) {
     exit(0);
 }
 
-static bool (*cb_table[])(TCPSocket*) = {
+static void (*cb_table[])(TCPSocket&) = {
     [LIST] = &handle_list,
     [CREATE_FILE] = &handle_create_file,
     [CREATE_DIR] = &handle_mkdir,
@@ -96,17 +92,20 @@ int main() {
     if (!server.init(ADDR, PORT)) {
         return 1;
     }
-    TCPSocket cli;
     while (1) {
-        if (server.accept(&cli)) {
-            thread([=]() mutable {
-                unsigned char header;
-                while (read(&cli, &header) &&
-                       header < PROTOCOL_COUNT &&
-                       (*cb_table[header])(&cli));
-                cli.close();
-            }).detach();
-        }
+        TCPSocket cli = server.accept();
+        thread([=]() mutable {
+            try {
+                while (1) {
+                    uint8_t header;
+                    cli >> header;
+                    ensure(header < PROTOCOL_COUNT);
+                    (*cb_table[header])(cli);
+                }
+            } catch (nullptr_t) {
+            }
+            cli.close();
+        }).detach();
     }
     return 0;
 }

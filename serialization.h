@@ -6,50 +6,48 @@
 #include "socket.h"
 
 template<typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, bool>::type read(TCPSocket* cli, T* obj) {
-    return cli->read(obj, sizeof(T));
+typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator>>(TCPSocket& cli, T& obj) {
+    cli.read(&obj, sizeof(T));
+    return cli;
 }
 
 template<typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, bool>::type write(TCPSocket* cli, const T& obj) {
-    return cli->write(&obj, sizeof(T));
+typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator<<(TCPSocket& cli, const T& obj) {
+    cli.write(&obj, sizeof(T));
+    return cli;
 }
 
 inline
-bool read(TCPSocket* cli, std::string* s) {
+TCPSocket& operator>>(TCPSocket& cli, std::string& s) {
     size_t len;
-    if (!read(cli, &len)) {
-        return false;
-    }
-    s->resize(len);
-    if (!cli->read(&s->front(), len)) {
-        return false;
-    }
-    (*s)[len] = '\0';
-    return true;
+    cli >> len;
+    s.resize(len);
+    cli.read(&s.front(), len);
+    s[len] = '\0';
+    return cli;
 }
 
 inline
-bool write(TCPSocket* cli, const std::string& s) {
-    return write(cli, s.size()) && cli->write(s.data(), s.size());
+TCPSocket& operator<<(TCPSocket& cli, const std::string& s) {
+    cli << s.size();
+    cli.write(s.data(), s.size());
+    return cli;
 }
 
 inline
-bool read(TCPSocket* cli, std::vector<char>* s) {
+TCPSocket& operator>>(TCPSocket& cli, std::vector<char>& s) {
     size_t len;
-    if (!read(cli, &len)) {
-        return false;
-    }
-    s->resize(len);
-    if (!cli->read(s->data(), len)) {
-        return false;
-    }
-    return true;
+    cli >> len;
+    s.resize(len);
+    cli.read(s.data(), len);
+    return cli;
 }
 
 inline
-bool write(TCPSocket* cli, const std::vector<char>& s) {
-    return write(cli, s.size()) && cli->write(s.data(), s.size());
+TCPSocket& operator<<(TCPSocket& cli, const std::vector<char>& s) {
+    cli << s.size();
+    cli.write(s.data(), s.size());
+    return cli;
 }
 
 #endif

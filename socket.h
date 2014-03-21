@@ -11,7 +11,6 @@
 
 class TCPSocket {
     int sockfd;
-    struct sockaddr_in addr;
 
     friend class TCPServer;
 
@@ -21,6 +20,7 @@ public:
             perror("socket");
             return false;
         }
+        struct sockaddr_in addr;
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
         if (inet_aton(dest_addr, &addr.sin_addr) == 0) {
@@ -38,7 +38,7 @@ public:
         ::close(sockfd);
     }
 
-    bool read(void* buff, ssize_t len) {
+    void read(void* buff, ssize_t len) {
         while (len > 0) {
             ssize_t count = len;
             if (count > SSIZE_MAX) {
@@ -47,31 +47,29 @@ public:
             auto n = ::read(sockfd, buff, count);
             if (n < 0) {
                 perror("read");
-                return false;
+                throw nullptr;
             }
             if (n == 0) {
-                return false;
+                throw nullptr;
             }
             len -= n;
             buff = (void*)((uintptr_t)buff + count);
         }
-        return true;
     }
 
-    bool write(const void* buff, int len) {
+    void write(const void* buff, int len) {
         while (len > 0) {
             int n = ::write(sockfd, buff, len);
             if (n < 0) {
                 perror("write");
-                return false;
+                throw nullptr;
             }
             if (n == 0) {
-                return false;
+                throw nullptr;
             }
             len -= n;
             buff = (void*)((uintptr_t)buff + n);
         }
-        return true;
     }
 };
 
@@ -111,9 +109,12 @@ public:
         ::close(sockfd);
     }
 
-    bool accept(TCPSocket* cli) {
-        socklen_t len = sizeof(cli->addr);
-        return (cli->sockfd = ::accept(sockfd, (struct sockaddr*)&cli->addr, &len)) >= 0;
+    TCPSocket accept() {
+        TCPSocket ret;
+        if ((ret.sockfd = ::accept(sockfd, nullptr, nullptr)) < 0) {
+            throw nullptr;
+        }
+        return ret;
     }
 };
 

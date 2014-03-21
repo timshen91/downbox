@@ -42,9 +42,9 @@ class Tuple {
     template<size_t, typename> friend struct get_type;
     template<size_t, typename> friend struct get_impl;
     template<typename Tp, typename... Ap>
-    friend bool read(TCPSocket* cli, Tuple<Tp, Ap...>* t);
+    friend TCPSocket& operator>>(TCPSocket& cli, Tuple<Tp, Ap...>& t);
     template<typename Tp, typename... Ap>
-    friend bool write(TCPSocket* cli, const Tuple<Tp, Ap...>& t);
+    friend TCPSocket& operator<<(TCPSocket& cli, const Tuple<Tp, Ap...>& t);
 
 public:
     template<size_t i>
@@ -62,9 +62,9 @@ class Tuple<T> {
     template<size_t, typename> friend struct get_type;
     template<size_t, typename> friend struct get_impl;
     template<typename Tp>
-    friend bool read(TCPSocket* cli, Tuple<Tp>* t);
+    friend TCPSocket& operator>>(TCPSocket& cli, Tuple<Tp>& t);
     template<typename Tp>
-    friend bool write(TCPSocket* cli, const Tuple<Tp>& t);
+    friend TCPSocket& operator<<(TCPSocket& cli, const Tuple<Tp>& t);
 
 public:
     template<size_t i>
@@ -74,23 +74,23 @@ public:
 };
 
 template<typename T, typename... Args>
-bool read(TCPSocket* cli, Tuple<T, Args...>* t) {
-    return read(cli, &t->first) && read(cli, &t->second);
+TCPSocket& operator>>(TCPSocket& cli, Tuple<T, Args...>& t) {
+    return cli >> t.first >> t.second;
 }
 
 template<typename T>
-bool read(TCPSocket* cli, Tuple<T>* t) {
-    return read(cli, &t->first);
+TCPSocket& operator>>(TCPSocket& cli, Tuple<T>& t) {
+    return cli >> t.first;
 }
 
 template<typename T, typename... Args>
-bool write(TCPSocket* cli, const Tuple<T, Args...>& t) {
-    return write(cli, t.first) && write(cli, t.second);
+TCPSocket& operator<<(TCPSocket& cli, const Tuple<T, Args...>& t) {
+    return cli << t.first << t.second;
 }
 
 template<typename T>
-bool write(TCPSocket* cli, const Tuple<T>& t) {
-    return write(cli, t.first);
+TCPSocket& operator<<(TCPSocket& cli, const Tuple<T>& t) {
+    return cli << t.first;
 }
 
 #endif

@@ -5,7 +5,7 @@
 #include <vector>
 #include "tuple.h"
 
-enum Protocol : unsigned char {
+enum Protocol : uint8_t {
     LIST,
     CREATE_FILE,
     CREATE_DIR,
