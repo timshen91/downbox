@@ -1,16 +1,59 @@
-#include <stdio.h>
 #include <windows.h>
+#include <stdio.h>
 #include <tchar.h>
+#include "protocol.h"
+#include <iostream>
+//static link lib
+#pragma comment(lib,"ws2_32.lib")
 
-void monitor();
+using namespace std;
+#define PORT 9999
+#define IP_ADDRESS "216.37.108.31"
+
+int monitor();
 
 //c盘下自动创建testFileChange文件，在次文件夹下所有变动讲被记录并在terminal中打出
 int main(void){
+
 	monitor();
 	return 1;
 }
 
-void monitor(){
+int monitor(){
+	//inti TCP connection
+	WSADATA	ws;
+	SOCKET client;
+	struct sockaddr_in ServerAddr;
+	int Ret = 0;
+	int AddrLen = 0;
+	HANDLE hThread = NULL;
+
+	if (WSAStartup(MAKEWORD(2, 2), &ws) != 0) {
+		cout << "init socket failed" << GetLastError() << endl;
+		return -1;
+	}
+
+	client = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (client == INVALID_SOCKET) {
+		cout << "client socket create failed" << GetLastError() << endl;
+		return -1;
+	}
+
+	ServerAddr.sin_family = AF_INET;
+	ServerAddr.sin_addr.s_addr = inet_addr(IP_ADDRESS);
+	ServerAddr.sin_port = htons(PORT);
+	memset(ServerAddr.sin_zero,0x00,8);
+
+	Ret = connect(client, (struct sockaddr*)&ServerAddr, sizeof(ServerAddr));
+	if (Ret == SOCKET_ERROR) {
+		cout << "connect failed" << GetLastError() << endl;
+		return -1;
+	}
+	else {
+		cout << "success" << endl;
+	}
+
+	//init monitor
 	TCHAR *dir = _T("c:\\testFileChange");
 	if (!CreateDirectory(dir, NULL)){
 		printf("File already exists.\n");
@@ -37,6 +80,7 @@ void monitor(){
 			case FILE_ACTION_ADDED:
 				printf("file add %S.", pnotify->FileName);
 				printf("\n");
+				
 				break;
 			case FILE_ACTION_MODIFIED:
 				WideCharToMultiByte(CP_ACP, 0, pnotify->FileName,
@@ -67,4 +111,5 @@ void monitor(){
 			}
 		}
 	}
+	return 0;
 }
