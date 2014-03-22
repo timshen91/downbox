@@ -4,16 +4,19 @@
 #include <string>
 #include <vector>
 #include "socket.h"
+#include "endian.h"
 
 template<typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator>>(TCPSocket& cli, T& obj) {
-    cli.read(&obj, 1);
+    auto o = letoh(obj);
+    cli.read(&o, 1);
     return cli;
 }
 
 template<typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator<<(TCPSocket& cli, const T& obj) {
-    cli.write(&obj, 1);
+    auto o = htole(obj);
+    cli.write(&o, 1);
     return cli;
 }
 
