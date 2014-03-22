@@ -2,7 +2,6 @@
 #include <dirent.h>
 #include <signal.h>
 #include <thread>
-#include <iostream>
 #include <fstream>
 #include "socket.h"
 #include "protocol.h"
@@ -123,12 +122,10 @@ int main() {
                         (*cb_table[header])(cli);
                     }
                 } catch (const std::string& e) {
-                    cerr << e << "\n";
                 }
                 cli.close();
             }).detach();
         } catch (const std::string& e) {
-            cerr << e << "\n";
         }
     }
     return 0;
