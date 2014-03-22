@@ -34,6 +34,9 @@ int main(int argc, char* argv[]) {
         ReqCreateFile req;
         req.get<0>().assign(argv[2]);
         ifstream fin(argv[2]);
+        if (fin.fail()) {
+            goto fail;
+        }
         fin.seekg(0, ifstream::end);
         req.get<1>().resize(fin.tellg());
         fin.seekg(0, ifstream::beg);
@@ -53,7 +56,6 @@ int main(int argc, char* argv[]) {
     } else {
         print_usage(argv);
         goto fail;
-        return 1;
     }
     conn.close();
     return 0;
