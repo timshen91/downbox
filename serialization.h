@@ -22,7 +22,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator
 
 inline
 TCPSocket& operator>>(TCPSocket& cli, std::string& s) {
-    size_t len;
+    uint32_t len;
     cli >> len;
     s.resize(len);
     cli.read(&s[0], len);
@@ -32,14 +32,14 @@ TCPSocket& operator>>(TCPSocket& cli, std::string& s) {
 
 inline
 TCPSocket& operator<<(TCPSocket& cli, const std::string& s) {
-    cli << s.size();
+    cli << (uint32_t)s.size();
     cli.write(s.data(), s.size());
     return cli;
 }
 
 template<typename T>
 TCPSocket& operator>>(TCPSocket& cli, std::vector<T>& v) {
-    size_t len;
+    uint32_t len;
     cli >> len;
     v.resize(len);
     cli.read(v.data(), v.size());
@@ -48,7 +48,7 @@ TCPSocket& operator>>(TCPSocket& cli, std::vector<T>& v) {
 
 template<typename T>
 TCPSocket& operator<<(TCPSocket& cli, const std::vector<T>& v) {
-    cli << v.size();
+    cli << (uint32_t)v.size();
     cli.write(v.data(), v.size());
     return cli;
 }
