@@ -43,9 +43,7 @@ static void handle_list(TCPSocket& cli) {
             perror("stat");
             continue;
         }
-        resp.emplace_back();
-        resp.back().get<0>() = name;
-        resp.back().get<1>() = st.st_mtim.tv_sec;
+        resp.emplace_back(name, st.st_mtim.tv_sec);
     }
     closedir(dir);
     cli << resp;
@@ -94,7 +92,7 @@ static void (*cb_table[])(TCPSocket&) = {
     [LIST] = &handle_list,
     [CREATE_FILE] = &handle_create_file,
     [CREATE_DIR] = &handle_mkdir,
-    [DELETE] = &handle_delete,
+    [DELETE_] = &handle_delete,
 };
 
 int main() {

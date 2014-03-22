@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
         req.assign(argv[2]);
         conn << req;
     } else if (cmd == "delete") {
-        conn << (uint8_t)DELETE;
+        conn << (uint8_t)DELETE_;
         ReqDelete req;
         req.assign(argv[2]);
         conn << req;

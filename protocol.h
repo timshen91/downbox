@@ -9,7 +9,7 @@ enum Protocol : uint8_t {
     LIST,
     CREATE_FILE,
     CREATE_DIR,
-    DELETE,
+    DELETE_,
 };
 
 typedef std::string ReqList; // Path

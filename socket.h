@@ -1,10 +1,18 @@
 #ifndef __SOCKET_H__
 #define __SOCKET_H__
 
+#ifdef _WIN32
+#include <WinSock2.h>
+#pragma comment(lib, "Ws2_32.lib")
+#include <stdint.h>
+typedef SSIZE_T ssize_t;
+#define constexpr
+#else
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <limits.h>
 #include <type_traits>
@@ -17,10 +25,11 @@ class TCPSocket {
     void read_impl(void* buff, ssize_t len) {
         while (len > 0) {
             ssize_t count = len;
-            if (count > SSIZE_MAX) {
-                count = SSIZE_MAX;
-            }
+#ifdef _WIN32
+            auto n = ::recv(sockfd, (char*)buff, count, 0);
+#else
             auto n = ::read(sockfd, buff, count);
+#endif
             if (n < 0) {
                 perror("read");
                 throw nullptr;
@@ -29,13 +38,17 @@ class TCPSocket {
                 throw nullptr;
             }
             len -= n;
-            buff = (void*)((uintptr_t)buff + count);
+            buff = (void*)((uintptr_t)buff + n);
         }
     }
 
     void write_impl(const void* buff, ssize_t len) {
         while (len > 0) {
-            ssize_t n = ::write(sockfd, buff, len);
+#ifdef _WIN32
+            auto n = ::send(sockfd, (char*)buff, len, 0);
+#else
+            auto n = ::write(sockfd, buff, len);
+#endif
             if (n < 0) {
                 perror("write");
                 throw nullptr;
@@ -57,7 +70,11 @@ public:
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
+#ifdef _WIN32
+        if ((addr.sin_addr.S_un.S_addr = inet_addr(dest_addr)) == INADDR_NONE) {
+#else
         if (inet_aton(dest_addr, &addr.sin_addr) == 0) {
+#endif
             perror("inet_aton");
             return false;
         }
@@ -69,7 +86,11 @@ public:
     }
 
     void close() {
+#ifdef _WIN32
+        closesocket(sockfd);
+#else
         ::close(sockfd);
+#endif
     }
 
     template<typename T>
@@ -107,14 +128,22 @@ public:
             return false;
         }
         int yes = 1;
-        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0) {
+#ifdef _WIN32
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char*)&yes, sizeof(yes)) < 0) {
+#else
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
+#endif
             perror("setsockopt");
             return false;
         }
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
+#ifdef _WIN32
+        if ((addr.sin_addr.S_un.S_addr = inet_addr(listen_addr)) == INADDR_NONE) {
+#else
         if (inet_aton(listen_addr, &addr.sin_addr) == 0) {
+#endif
             perror("inet_aton");
             return false;
         }
@@ -130,7 +159,11 @@ public:
     }
 
     void close() {
+#ifdef _WIN32
+        closesocket(sockfd);
+#else
         ::close(sockfd);
+#endif
     }
 
     TCPSocket accept() {
