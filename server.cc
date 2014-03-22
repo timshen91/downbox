@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <signal.h>
 #include <thread>
+#include <iostream>
 #include <fstream>
 #include "socket.h"
 #include "protocol.h"
@@ -27,7 +28,7 @@ using namespace std;
 //    return move(ret);
 //}
 
-#define ensure(cond) do { if (!(cond)) throw nullptr; } while (0)
+#define ensure(cond) do { if (!(cond)) throw std::string(__FILE__) + " " + to_string(__LINE__); } while (0)
 
 static void handle_list(TCPSocket& cli) {
     ReqList req;
@@ -74,7 +75,7 @@ static void handle_delete(TCPSocket& cli) {
     } else if (S_ISREG(st.st_mode)) {
         ensure(unlink(req.data()) >= 0);
     } else {
-        throw nullptr;
+        ensure(false);
     }
 }
 
@@ -121,11 +122,13 @@ int main() {
                         ensure(header < sizeof(cb_table)/(sizeof*cb_table));
                         (*cb_table[header])(cli);
                     }
-                } catch (nullptr_t) {
+                } catch (const std::string& e) {
+                    cerr << e << "\n";
                 }
                 cli.close();
             }).detach();
-        } catch (...) {
+        } catch (const std::string& e) {
+            cerr << e << "\n";
         }
     }
     return 0;

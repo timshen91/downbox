@@ -16,6 +16,9 @@ typedef SSIZE_T ssize_t;
 #include <stdio.h>
 #include <limits.h>
 #include <type_traits>
+#include <string>
+
+#define error() do { throw std::string(__FILE__) + " " + std::to_string(__LINE__); } while (0)
 
 class TCPSocket {
     int sockfd;
@@ -32,10 +35,10 @@ class TCPSocket {
 #endif
             if (n < 0) {
                 perror("read");
-                throw nullptr;
+                error();
             }
             if (n == 0) {
-                throw nullptr;
+                error();
             }
             len -= n;
             buff = (void*)((uintptr_t)buff + n);
@@ -51,10 +54,10 @@ class TCPSocket {
 #endif
             if (n < 0) {
                 perror("write");
-                throw nullptr;
+                error();
             }
             if (n == 0) {
-                throw nullptr;
+                error();
             }
             len -= n;
             buff = (void*)((uintptr_t)buff + n);
@@ -169,7 +172,7 @@ public:
     TCPSocket accept() {
         TCPSocket ret;
         if ((ret.sockfd = ::accept(sockfd, nullptr, nullptr)) < 0) {
-            throw nullptr;
+            error();
         }
         return ret;
     }

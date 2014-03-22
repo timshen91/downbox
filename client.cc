@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     TCPSocket conn;
-    if (!conn.init("127.0.0.1", 9999)) {
+    if (!conn.init("216.37.108.31", 9999)) {
         return 1;
     }
     string cmd(argv[1]);
