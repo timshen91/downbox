@@ -8,8 +8,8 @@
 
 template<typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator>>(TCPSocket& cli, T& obj) {
-    auto o = letoh(obj);
-    cli.read(&o, 1);
+    cli.read(&obj, 1);
+    obj = letoh(obj);
     return cli;
 }
 

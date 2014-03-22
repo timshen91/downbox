@@ -54,7 +54,7 @@ static void handle_create_file(TCPSocket& cli) {
     ReqCreateFile req;
     cli >> req;
     ofstream fout(req.get<0>().data());
-    auto res = fout.fail() || !fout.write(req.get<1>().data(), req.get<1>().size());
+    auto res = !fout.fail() && fout.write(req.get<1>().data(), req.get<1>().size());
     fout.close();
     ensure(res);
 }
