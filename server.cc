@@ -1,6 +1,5 @@
 #include <sys/stat.h>
 #include <signal.h>
-#include <string.h>
 #include <thread>
 #include <fstream>
 #include <iostream>
@@ -75,9 +74,6 @@ static bool delete_recursive(PathString& path) {
         path += '/';
         const char* name;
         while ((name = dir.next()) != nullptr) {
-            if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
-                continue;
-            }
             auto old_size = path.size();
             path += name;
             auto res = delete_recursive(path);

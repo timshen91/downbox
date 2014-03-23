@@ -2,6 +2,7 @@
 #define __DIR_H__
 
 #include <dirent.h>
+#include <string.h>
 
 class Directory {
     DIR* d;
@@ -36,9 +37,12 @@ public:
     }
 
     const char* next() {
-        struct dirent* ent;
-        if ((ent = readdir(d)) == nullptr) {
+        struct dirent* ent = readdir(d);
+        if (ent == nullptr) {
             return nullptr;
+        }
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+            return next();
         }
         return ent->d_name;
     }
