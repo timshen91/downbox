@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <signal.h>
+#include <string.h>
 #include <thread>
 #include <fstream>
 #include "socket.h"
@@ -13,19 +14,19 @@ using namespace std;
 #define ADDR "0.0.0.0"
 #define PORT 9999
 
-//vector<string> split(const string& s, char ch) {
-//    size_t last = 0;
-//    vector<string> ret;
-//    size_t i;
-//    for (i = 0; i < s.size(); i++) {
-//        if (s[i] == ch) {
-//            ret.emplace_back(s.substr(last, i - last));
-//            last = i+1;
-//        }
-//    }
-//    ret.emplace_back(s.substr(last, i - last));
-//    return move(ret);
-//}
+vector<string> split(const string& s, char ch) {
+    size_t last = 0;
+    vector<string> ret;
+    size_t i;
+    for (i = 0; i < s.size(); i++) {
+        if (s[i] == ch) {
+            ret.emplace_back(s.substr(last, i - last));
+            last = i+1;
+        }
+    }
+    ret.emplace_back(s.substr(last, i - last));
+    return move(ret);
+}
 
 #define ensure(cond) do { if (!(cond)) throw std::string(__FILE__) + " " + to_string(__LINE__); } while (0)
 
@@ -66,20 +67,35 @@ static void handle_mkdir(TCPSocket& cli) {
     ensure(mkdir(req.data(), 0755) >= 0);
 }
 
+static bool delete_recursive(const string& path) {
+    if (unlink(path.data()) >= 0) {
+        return true;
+    } else if (errno != EISDIR) {
+        return false;
+    }
+    DIR* d;
+    if ((d = opendir(path.data())) == nullptr) {
+        return false;
+    }
+    struct dirent* ent;
+    while ((ent = readdir(d)) != nullptr) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+            continue;
+        }
+        if (!delete_recursive(path + "/" + ent->d_name)) {
+            closedir(d);
+            return false;
+        }
+    }
+    closedir(d);
+    rmdir(path.data());
+    return true;
+}
+
 static void handle_delete(TCPSocket& cli) {
     ReqDelete req;
     cli >> req;
-    // stat, rmdir and unlink are Linux system calls.
-    struct stat st;
-    ensure(stat(req.data(), &st) >= 0);
-    if (S_ISDIR(st.st_mode)) {
-        // TODO: recursive
-        ensure(rmdir(req.data()) >= 0);
-    } else if (S_ISREG(st.st_mode)) {
-        ensure(unlink(req.data()) >= 0);
-    } else {
-        ensure(false);
-    }
+    ensure(delete_recursive(req));
 }
 
 TCPServer server;

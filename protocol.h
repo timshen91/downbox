@@ -12,16 +12,25 @@ enum Protocol : uint8_t {
     DELETE_,
 };
 
-typedef std::string ReqList; // Path
-typedef std::vector<Tuple<std::string, uint64_t>> RespList; // A list of "File path, then date"
+struct PathString : public std::string {
+    PathString() {}
+    PathString(const char* s) : std::string(s) {}
 
-typedef Tuple<std::string, std::vector<char>> ReqCreateFile; // File path, then content
+    void sanitize() {
+        // TODO forbid "." and ".."
+    }
+};
+
+typedef PathString ReqList; // Path
+typedef std::vector<Tuple<PathString, uint64_t>> RespList; // A list of "File path, then date"
+
+typedef Tuple<PathString, std::vector<char>> ReqCreateFile; // File path, then content
 // No response
 
-typedef std::string ReqCreateDir; // Directory path
+typedef PathString ReqCreateDir; // Directory path
 // No response
 
-typedef std::string ReqDelete; // File/directory path
+typedef PathString ReqDelete; // File/directory path
 // No response
 
 #endif

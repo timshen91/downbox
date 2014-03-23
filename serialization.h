@@ -21,17 +21,18 @@ typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator
 }
 
 inline
-TCPSocket& operator>>(TCPSocket& cli, std::string& s) {
+TCPSocket& operator>>(TCPSocket& cli, PathString& s) {
     uint32_t len;
     cli >> len;
     s.resize(len);
     cli.read(&s[0], len);
     s[len] = '\0';
+    s.sanitize();
     return cli;
 }
 
 inline
-TCPSocket& operator<<(TCPSocket& cli, const std::string& s) {
+TCPSocket& operator<<(TCPSocket& cli, const PathString& s) {
     cli << (uint32_t)s.size();
     cli.write(s.data(), s.size());
     return cli;
