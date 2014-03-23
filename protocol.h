@@ -13,9 +13,15 @@ enum Protocol : uint8_t {
 };
 
 typedef std::string ReqList; // Path
-typedef std::vector<Tuple<std::string, time_t>> RespList; // A list of "File path, then date"
+typedef std::vector<Tuple<std::string, uint64_t>> RespList; // A list of "File path, then date"
+
 typedef Tuple<std::string, std::vector<char>> ReqCreateFile; // File path, then content
+// No response
+
 typedef std::string ReqCreateDir; // Directory path
+// No response
+
 typedef std::string ReqDelete; // File/directory path
+// No response
 
 #endif

@@ -32,6 +32,7 @@ using namespace std;
 static void handle_list(TCPSocket& cli) {
     ReqList req;
     cli >> req;
+    // opendir, readdir and closedir are Linux system calls.
     DIR* dir;
     ensure((dir = opendir(req.data())) != nullptr);
     RespList resp;
@@ -52,6 +53,7 @@ static void handle_list(TCPSocket& cli) {
 static void handle_create_file(TCPSocket& cli) {
     ReqCreateFile req;
     cli >> req;
+    // ofstream is the C++ way to read a file.
     ofstream fout(req.get<0>().data());
     auto res = !fout.fail() && fout.write(req.get<1>().data(), req.get<1>().size());
     fout.close();
@@ -67,9 +69,11 @@ static void handle_mkdir(TCPSocket& cli) {
 static void handle_delete(TCPSocket& cli) {
     ReqDelete req;
     cli >> req;
+    // stat, rmdir and unlink are Linux system calls.
     struct stat st;
     ensure(stat(req.data(), &st) >= 0);
     if (S_ISDIR(st.st_mode)) {
+        // TODO: recursive
         ensure(rmdir(req.data()) >= 0);
     } else if (S_ISREG(st.st_mode)) {
         ensure(unlink(req.data()) >= 0);
@@ -96,9 +100,11 @@ static void (*cb_table[])(TCPSocket&) = {
 };
 
 int main() {
+    // chroot to make a filesystem jail. It'll be a little troubler when supporting multiple users.
     if (chroot(WORK_PATH) < 0 || chdir("/") < 0) {
         return 1;
     }
+    // Register the action on the signal SIGINT (typically triggered when the user hits Ctrl+c in the terminal).
     {
         struct sigaction action;
         action.sa_handler = sigint_handler;
@@ -110,11 +116,17 @@ int main() {
     if (!server.init(ADDR, PORT)) {
         return 1;
     }
+    // Server main loop:
+    // 0) listen on the port;
+    // 1) accept a new client;
+    // 2) create a new thread;
     while (1) {
         try {
             TCPSocket cli = server.accept();
-            thread([=]() mutable {
+            // C++11 lambda.
+            thread([](TCPSocket cli) {
                 try {
+                    // The thread get request at a time, dispatch it to the correspond handler (cb_table, means callback table) by the header.
                     while (1) {
                         uint8_t header;
                         cli >> header;
@@ -124,7 +136,7 @@ int main() {
                 } catch (const std::string& e) {
                 }
                 cli.close();
-            }).detach();
+            }, cli).detach();
         } catch (const std::string& e) {
         }
     }
