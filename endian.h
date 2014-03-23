@@ -46,6 +46,8 @@ ENDIAN_IMPL(2, htole_impl, htole16);
 ENDIAN_IMPL(4, htole_impl, htole32);
 ENDIAN_IMPL(8, htole_impl, htole64);
 
+#undef ENDIAN_IMPL
+
 }
 
 template<typename T>
