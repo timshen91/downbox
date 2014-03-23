@@ -1,5 +1,4 @@
 #include <sys/stat.h>
-#include <dirent.h>
 #include <signal.h>
 #include <string.h>
 #include <thread>
@@ -8,6 +7,7 @@
 #include "socket.h"
 #include "protocol.h"
 #include "path.h"
+#include "directory.h"
 using namespace std;
 
 #define BUF_SIZE 4096
@@ -17,22 +17,23 @@ using namespace std;
 
 #define ensure(cond) do { if (!(cond)) throw std::string(__FILE__) + " " + to_string(__LINE__); } while (0)
 
-static void handle_login(TCPSocket& cli) {
-    ReqLogin req;
-    cli >> req;
-}
+//static String handle_login(TCPSocket& cli) {
+//    ReqLogin req;
+//    cli >> req;
+//    if (req != "root") {
+//        throw "Invalid username";
+//    }
+//    return req;
+//}
 
 static void handle_list(TCPSocket& cli) {
     ReqList req;
     cli >> req;
-    // opendir, readdir and closedir are Linux system calls.
-    DIR* dir;
-    ensure((dir = opendir(req.data())) != nullptr);
     RespList resp;
-    struct dirent* ent;
+    Directory dir(req.data());
     req += '/';
-    while ((ent = readdir(dir)) != nullptr) {
-        const char* name = ent->d_name;
+    const char* name;
+    while ((name = dir.next()) != nullptr) {
         struct stat st;
         auto old_size = req.size();
         req += name;
@@ -44,7 +45,6 @@ static void handle_list(TCPSocket& cli) {
         }
         resp.emplace_back(name, st.st_mtim.tv_sec);
     }
-    closedir(dir);
     cli << resp;
 }
 
@@ -70,26 +70,25 @@ static bool delete_recursive(PathString& path) {
     } else if (errno != EISDIR) {
         return false;
     }
-    DIR* d;
-    if ((d = opendir(path.data())) == nullptr) {
+    try {
+        Directory dir(path.data());
+        path += '/';
+        const char* name;
+        while ((name = dir.next()) != nullptr) {
+            if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+                continue;
+            }
+            auto old_size = path.size();
+            path += name;
+            auto res = delete_recursive(path);
+            path.resize(old_size);
+            if (!res) {
+                return false;
+            }
+        }
+    } catch (...) {
         return false;
     }
-    path += '/';
-    struct dirent* ent;
-    while ((ent = readdir(d)) != nullptr) {
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
-            continue;
-        }
-        auto old_size = path.size();
-        path += ent->d_name;
-        auto res = delete_recursive(path);
-        path.resize(old_size);
-        if (!res) {
-            closedir(d);
-            return false;
-        }
-    }
-    closedir(d);
     rmdir(path.data());
     return true;
 }
@@ -111,7 +110,6 @@ static void sigint_handler(int signal) {
 }
 
 static void (*cb_table[])(TCPSocket&) = {
-    [LOGIN] = &handle_login,
     [LIST] = &handle_list,
     [CREATE_FILE] = &handle_create_file,
     [CREATE_DIR] = &handle_mkdir,
@@ -146,6 +144,8 @@ int main() {
             thread([](TCPSocket cli) {
                 try {
                     // The thread get request at a time, dispatch it to the correspond handler (cb_table, means callback table) by the header.
+                    //auto username = handle_login(cli);
+                    // TODO
                     while (1) {
                         uint8_t header;
                         cli >> header;

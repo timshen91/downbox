@@ -51,6 +51,9 @@ public:
             t += '/';
             t += s;
         }
+        if (t.size() == 0) {
+            t += '/';
+        }
         this->assign(t);
     }
 };

@@ -6,7 +6,6 @@
 #include "tuple.h"
 
 enum Protocol : uint8_t {
-    LOGIN,
     LIST,
     CREATE_FILE,
     CREATE_DIR,
@@ -15,7 +14,7 @@ enum Protocol : uint8_t {
 
 class PathString;
 
-typedef String ReqLogin;
+typedef String ReqLogin; // Username so far.
 // No response
 
 typedef PathString ReqList; // Path
