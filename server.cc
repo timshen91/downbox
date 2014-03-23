@@ -7,7 +7,7 @@
 #include <iostream>
 #include "socket.h"
 #include "protocol.h"
-#include "serialization.h"
+#include "path.h"
 using namespace std;
 
 #define BUF_SIZE 4096
@@ -16,6 +16,11 @@ using namespace std;
 #define PORT 9999
 
 #define ensure(cond) do { if (!(cond)) throw std::string(__FILE__) + " " + to_string(__LINE__); } while (0)
+
+static void handle_login(TCPSocket& cli) {
+    ReqLogin req;
+    cli >> req;
+}
 
 static void handle_list(TCPSocket& cli) {
     ReqList req;
@@ -106,6 +111,7 @@ static void sigint_handler(int signal) {
 }
 
 static void (*cb_table[])(TCPSocket&) = {
+    [LOGIN] = &handle_login,
     [LIST] = &handle_list,
     [CREATE_FILE] = &handle_create_file,
     [CREATE_DIR] = &handle_mkdir,

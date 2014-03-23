@@ -16,7 +16,8 @@ typedef SSIZE_T ssize_t;
 #include <stdio.h>
 #include <limits.h>
 #include <type_traits>
-#include <string>
+#include <vector>
+#include "endian.h"
 
 #define error() do { throw std::string(__FILE__) + " " + std::to_string(__LINE__); } while (0)
 
@@ -177,5 +178,35 @@ public:
         return ret;
     }
 };
+
+template<typename T>
+typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator>>(TCPSocket& cli, T& obj) {
+    cli.read(&obj, 1);
+    obj = letoh(obj);
+    return cli;
+}
+
+template<typename T>
+typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator<<(TCPSocket& cli, const T& obj) {
+    auto o = htole(obj);
+    cli.write(&o, 1);
+    return cli;
+}
+
+template<typename T>
+TCPSocket& operator>>(TCPSocket& cli, std::vector<T>& v) {
+    uint32_t len;
+    cli >> len;
+    v.resize(len);
+    cli.read(v.data(), v.size());
+    return cli;
+}
+
+template<typename T>
+TCPSocket& operator<<(TCPSocket& cli, const std::vector<T>& v) {
+    cli << (uint32_t)v.size();
+    cli.write(v.data(), v.size());
+    return cli;
+}
 
 #endif
