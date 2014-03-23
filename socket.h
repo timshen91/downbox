@@ -38,7 +38,7 @@ class TCPSocket {
                 error();
             }
             if (n == 0) {
-                error();
+                throw nullptr;
             }
             len -= n;
             buff = (void*)((uintptr_t)buff + n);
@@ -57,7 +57,7 @@ class TCPSocket {
                 error();
             }
             if (n == 0) {
-                error();
+                throw nullptr;
             }
             len -= n;
             buff = (void*)((uintptr_t)buff + n);

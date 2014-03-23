@@ -4,6 +4,7 @@
 #include <string.h>
 #include <thread>
 #include <fstream>
+#include <iostream>
 #include "socket.h"
 #include "protocol.h"
 #include "serialization.h"
@@ -13,20 +14,6 @@ using namespace std;
 #define WORK_PATH "/tmp"
 #define ADDR "0.0.0.0"
 #define PORT 9999
-
-vector<string> split(const string& s, char ch) {
-    size_t last = 0;
-    vector<string> ret;
-    size_t i;
-    for (i = 0; i < s.size(); i++) {
-        if (s[i] == ch) {
-            ret.emplace_back(s.substr(last, i - last));
-            last = i+1;
-        }
-    }
-    ret.emplace_back(s.substr(last, i - last));
-    return move(ret);
-}
 
 #define ensure(cond) do { if (!(cond)) throw std::string(__FILE__) + " " + to_string(__LINE__); } while (0)
 
@@ -38,10 +25,15 @@ static void handle_list(TCPSocket& cli) {
     ensure((dir = opendir(req.data())) != nullptr);
     RespList resp;
     struct dirent* ent;
+    req += '/';
     while ((ent = readdir(dir)) != nullptr) {
         const char* name = ent->d_name;
         struct stat st;
-        if (stat((req + "/" + name).data(), &st) < 0) {
+        auto old_size = req.size();
+        req += name;
+        auto res = stat(req.data(), &st);
+        req.resize(old_size);
+        if (res < 0) {
             perror("stat");
             continue;
         }
@@ -67,7 +59,7 @@ static void handle_mkdir(TCPSocket& cli) {
     ensure(mkdir(req.data(), 0755) >= 0);
 }
 
-static bool delete_recursive(const string& path) {
+static bool delete_recursive(PathString& path) {
     if (unlink(path.data()) >= 0) {
         return true;
     } else if (errno != EISDIR) {
@@ -77,12 +69,17 @@ static bool delete_recursive(const string& path) {
     if ((d = opendir(path.data())) == nullptr) {
         return false;
     }
+    path += '/';
     struct dirent* ent;
     while ((ent = readdir(d)) != nullptr) {
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
             continue;
         }
-        if (!delete_recursive(path + "/" + ent->d_name)) {
+        auto old_size = path.size();
+        path += ent->d_name;
+        auto res = delete_recursive(path);
+        path.resize(old_size);
+        if (!res) {
             closedir(d);
             return false;
         }
@@ -149,7 +146,11 @@ int main() {
                         ensure(header < sizeof(cb_table)/(sizeof*cb_table));
                         (*cb_table[header])(cli);
                     }
+                } catch (nullptr_t) {
                 } catch (const std::string& e) {
+                    std::cerr << e << "\n";
+                } catch (const char* e) {
+                    std::cerr << e << "\n";
                 }
                 cli.close();
             }, cli).detach();

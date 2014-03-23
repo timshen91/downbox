@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
         RespList resp;
         conn >> resp;
         for (auto& it : resp) {
-            cout << it.get<0>() << " " << it.get<1>() << "\n";
+            cout << it.get<0>().data() << " " << it.get<1>() << "\n";
         }
     } else if (cmd == "create") {
         conn << (uint8_t)CREATE_FILE;
