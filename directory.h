@@ -1,5 +1,5 @@
-#ifndef __DIR_H__
-#define __DIR_H__
+#ifndef __DIRECTORY_H__
+#define __DIRECTORY_H__
 
 #include <dirent.h>
 #include <string.h>
