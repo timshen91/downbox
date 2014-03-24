@@ -14,7 +14,7 @@ enum Protocol : uint8_t {
 
 class PathString;
 
-typedef String ReqLogin; // Username so far.
+typedef std::string ReqLogin; // Username so far.
 // No response
 
 typedef PathString ReqList; // Path

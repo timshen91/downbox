@@ -193,6 +193,26 @@ typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator
     return cli;
 }
 
+inline
+TCPSocket& operator>>(TCPSocket& cli, std::string& s) {
+    uint32_t len;
+    cli >> len;
+    if (len > 4096) {
+        throw "String too long";
+    }
+    s.resize(len);
+    cli.read(&s[0], len);
+    s[len] = '\0';
+    return cli;
+}
+
+inline
+TCPSocket& operator<<(TCPSocket& cli, const std::string& s) {
+    cli << (uint32_t)s.size();
+    cli.write(s.data(), s.size());
+    return cli;
+}
+
 template<typename T>
 TCPSocket& operator>>(TCPSocket& cli, std::vector<T>& v) {
     uint32_t len;

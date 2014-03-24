@@ -1,14 +1,15 @@
 #ifndef __PATH_H__
 #define __PATH_H__
 
-#include "string.h"
+class PathString : private std::string {
+    typedef std::string BaseT;
 
-class PathString : private String {
-    typedef String BaseT;
+    friend TCPSocket& operator>>(TCPSocket&, PathString&);
+    friend TCPSocket& operator<<(TCPSocket&, const PathString&);
 
-    static std::vector<String> split(const String& s, char ch) {
+    static std::vector<std::string> split(const std::string& s, char ch) {
         size_t last = 0;
-        std::vector<String> ret;
+        std::vector<std::string> ret;
         size_t i;
         for (i = 0; i < s.size(); i++) {
             if (s[i] == '\0') {
@@ -40,7 +41,7 @@ public:
             throw "Empty string as a path";
         }
         auto ss = split(*this, '/');
-        String t;
+        std::string t;
         for (auto& s : ss) {
             if (s.size() == 0) {
                 continue;
@@ -60,20 +61,14 @@ public:
 
 inline
 TCPSocket& operator>>(TCPSocket& cli, PathString& s) {
-    uint32_t len;
-    cli >> len;
-    s.resize(len);
-    cli.read(&s[0], len);
-    s[len] = '\0';
+    cli >> static_cast<std::string&>(s);
     s.sanitize();
     return cli;
 }
 
 inline
 TCPSocket& operator<<(TCPSocket& cli, const PathString& s) {
-    cli << (uint32_t)s.size();
-    cli.write(s.data(), s.size());
-    return cli;
+    return cli << static_cast<const std::string&>(s);
 }
 
 #endif

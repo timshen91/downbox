@@ -16,7 +16,7 @@ using namespace std;
 
 #define ensure(cond) do { if (!(cond)) throw std::string(__FILE__) + " " + to_string(__LINE__); } while (0)
 
-//static String handle_login(TCPSocket& cli) {
+//static std::string handle_login(TCPSocket& cli) {
 //    ReqLogin req;
 //    cli >> req;
 //    if (req != "root") {
