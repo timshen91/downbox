@@ -18,7 +18,7 @@ typedef std::string ReqLogin; // Username so far.
 // No response
 
 typedef PathString ReqList; // Path
-typedef std::vector<Tuple<PathString, uint64_t>> RespList; // A list of "File path, then date"
+typedef std::vector<Tuple<std::string, uint64_t>> RespList; // A list of "File path, then date"
 
 typedef Tuple<PathString, std::vector<char>> ReqCreateFile; // File path, then content
 // No response

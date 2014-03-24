@@ -25,74 +25,67 @@ using namespace std;
 //    return req;
 //}
 
-static void handle_list(TCPSocket& cli) {
-    ReqList req;
-    cli >> req;
-    RespList resp;
-    Directory dir(req.data());
-    req += '/';
-    const char* name;
-    while ((name = dir.next()) != nullptr) {
-        struct stat st;
-        auto old_size = req.size();
-        req += name;
-        auto res = stat(req.data(), &st);
-        req.resize(old_size);
-        if (res < 0) {
-            perror("stat");
+static void iterate_dir(const string& path, const function<void (string&&)>& cb) {
+    Directory d(path.data());
+    struct dirent* ent;
+    while ((ent = readdir(d.d)) != nullptr) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
             continue;
         }
-        resp.emplace_back(name, st.st_mtim.tv_sec);
+        cb(path + "/" + ent->d_name);
     }
+}
+
+static void handle_list(TCPSocket& cli, const string& home) {
+    ReqList req;
+    cli >> req;
+    string path = home + move(req);
+    RespList resp;
+    iterate_dir(path, [&](string&& name) {
+        struct stat st;
+        auto res = stat(name.data(), &st);
+        if (res < 0) {
+            perror("stat");
+            return;
+        }
+        resp.emplace_back(name, st.st_mtim.tv_sec);
+    });
     cli << resp;
 }
 
-static void handle_create_file(TCPSocket& cli) {
+static void handle_create_file(TCPSocket& cli, const string& home) {
     ReqCreateFile req;
     cli >> req;
+    string path = home + move(req.get<0>());
     // ofstream is the C++ way to read a file.
-    ofstream fout(req.get<0>().data());
+    ofstream fout(path);
     auto res = !fout.fail() && fout.write(req.get<1>().data(), req.get<1>().size());
     fout.close();
     ensure(res);
 }
 
-static void handle_mkdir(TCPSocket& cli) {
+static void handle_mkdir(TCPSocket& cli, const string& home) {
     ReqCreateDir req;
     cli >> req;
-    ensure(mkdir(req.data(), 0755) >= 0);
+    ensure(mkdir((home + move(req)).data(), 0755) >= 0);
 }
 
-static bool delete_recursive(PathString& path) {
+static void delete_recursive(const string& path) {
     if (unlink(path.data()) >= 0) {
-        return true;
+        return;
     } else if (errno != EISDIR) {
-        return false;
+        throw "Not a dir nor a file";
     }
-    try {
-        Directory dir(path.data());
-        path += '/';
-        const char* name;
-        while ((name = dir.next()) != nullptr) {
-            auto old_size = path.size();
-            path += name;
-            auto res = delete_recursive(path);
-            path.resize(old_size);
-            if (!res) {
-                return false;
-            }
-        }
-    } catch (...) {
-        return false;
-    }
-    rmdir(path.data());
-    return true;
+    iterate_dir(path, [&](string&& name) {
+        delete_recursive(name);
+    });
+    ensure(rmdir(path.data()) >= 0);
 }
 
-static void handle_delete(TCPSocket& cli) {
+static void handle_delete(TCPSocket& cli, const string& home) {
     ReqDelete req;
     cli >> req;
-    ensure(delete_recursive(req));
+    delete_recursive(home + move(req));
 }
 
 TCPServer server;
@@ -105,7 +98,7 @@ static void sigint_handler(int signal) {
     exit(0);
 }
 
-static void (*cb_table[])(TCPSocket&) = {
+static void (*cb_table[])(TCPSocket&, const string&) = {
     [LIST] = &handle_list,
     [CREATE_FILE] = &handle_create_file,
     [CREATE_DIR] = &handle_mkdir,
@@ -141,12 +134,13 @@ int main() {
                 try {
                     // The thread get request at a time, dispatch it to the correspond handler (cb_table, means callback table) by the header.
                     //auto username = handle_login(cli);
-                    // TODO
+                    const string home = "/root";
+                    mkdir(home.data(), 0755);
                     while (1) {
                         uint8_t header;
                         cli >> header;
                         ensure(header < sizeof(cb_table)/(sizeof*cb_table));
-                        (*cb_table[header])(cli);
+                        (*cb_table[header])(cli, home);
                     }
                 } catch (nullptr_t) {
                 } catch (const std::string& e) {

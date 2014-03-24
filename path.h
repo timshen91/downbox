@@ -1,7 +1,7 @@
 #ifndef __PATH_H__
 #define __PATH_H__
 
-class PathString : private std::string {
+class PathString : public std::string {
     typedef std::string BaseT;
 
     friend TCPSocket& operator>>(TCPSocket&, PathString&);
@@ -28,13 +28,6 @@ public:
     PathString() {}
     PathString(const char* s) : BaseT(s) {}
 
-    using BaseT::operator[];
-    using BaseT::size;
-    using BaseT::data;
-    using BaseT::assign;
-    using BaseT::operator+=;
-    using BaseT::resize;
-
     void sanitize() {
         // TODO forbid "." and ".."
         if (size() <= 0) {
@@ -51,9 +44,6 @@ public:
             }
             t += '/';
             t += s;
-        }
-        if (t.size() == 0) {
-            t += '/';
         }
         this->assign(t);
     }
