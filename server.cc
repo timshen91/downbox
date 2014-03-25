@@ -139,7 +139,7 @@ int main() {
                     while (1) {
                         uint8_t header;
                         cli >> header;
-                        ensure(header < sizeof(cb_table)/(sizeof*cb_table));
+                        ensure(header < sizeof(cb_table)/(sizeof(*cb_table)));
                         (*cb_table[header])(cli, home);
                     }
                 } catch (nullptr_t) {
