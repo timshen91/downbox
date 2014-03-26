@@ -25,6 +25,22 @@ using namespace std;
 //    return req;
 //}
 
+static void handle_sync(TCPSocket& cli, const string& home) {
+    ReqSync req;
+    auto path = home + req;
+    ifstream fin(path);
+    if (!fin) {
+        throw "No such file";
+    }
+    RespSync resp;
+    fin.seekg(0, ifstream::end);
+    resp.resize(fin.tellg());
+    fin.seekg(0, ifstream::beg);
+    fin.read(resp.data(), resp.size());
+    fin.close();
+    cli << resp;
+}
+
 static void iterate_dir(const string& path, const function<void (string&&)>& cb) {
     Directory d(path.data());
     struct dirent* ent;
@@ -99,6 +115,7 @@ static void sigint_handler(int signal) {
 }
 
 static void (*cb_table[])(TCPSocket&, const string&) = {
+    [SYNC] = &handle_sync,
     [LIST] = &handle_list,
     [CREATE_FILE] = &handle_create_file,
     [CREATE_DIR] = &handle_mkdir,

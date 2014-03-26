@@ -6,6 +6,7 @@
 #include "tuple.h"
 
 enum Protocol : uint8_t {
+    SYNC,
     LIST,
     CREATE_FILE,
     CREATE_DIR,
@@ -13,6 +14,9 @@ enum Protocol : uint8_t {
 };
 
 class PathString;
+
+typedef PathString ReqSync; // Path
+typedef std::vector<char> RespSync; // Content
 
 typedef std::string ReqLogin; // Username so far.
 // No response
