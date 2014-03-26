@@ -27,7 +27,8 @@ using namespace std;
 
 static void handle_sync(TCPSocket& cli, const string& home) {
     ReqSync req;
-    auto path = home + req;
+    cli >> req;
+    auto path = home + move(req);
     ifstream fin(path);
     if (!fin) {
         throw "No such file";

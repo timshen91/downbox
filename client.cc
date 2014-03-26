@@ -20,7 +20,19 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     string cmd(argv[1]);
-    if (cmd == "list") {
+    if (cmd == "sync") {
+        conn << (uint8_t)SYNC;
+        ReqSync req = argv[2];
+        conn << req;
+        RespSync resp;
+        conn >> resp;
+        ofstream fout(argv[2]);
+        if (!fout) {
+            goto fail;
+        }
+        fout.write(resp.data(), resp.size());
+        fout.close();
+    } else if (cmd == "list") {
         conn << (uint8_t)LIST;
         ReqList req = argv[2];
         conn << req;
