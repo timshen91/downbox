@@ -23,5 +23,17 @@
     <ClInclude Include="protocol.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="directory.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="endian.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="socket.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tuple.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

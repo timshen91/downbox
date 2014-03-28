@@ -1,10 +1,11 @@
-#include <windows.h>
+//#include <windows.h>
 #include <stdio.h>
 #include <tchar.h>
 #include "protocol.h"
 #include <iostream>
+#include "socket.h""
 //static link lib
-#pragma comment(lib,"ws2_32.lib")
+//#pragma comment(lib,"ws2_32.lib")
 
 using namespace std;
 #define PORT 9999
@@ -12,7 +13,7 @@ using namespace std;
 
 int monitor();
 
-//c盘下自动创建testFileChange文件，在次文件夹下所有变动讲被记录并在terminal中打出
+//Create file in C://
 int main(void){
 
 	monitor();
