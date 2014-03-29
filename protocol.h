@@ -14,8 +14,6 @@ enum Protocol : uint8_t {
     DELETE_,
 };
 
-class PathString;
-
 typedef PathString ReqSync; // Path
 typedef std::vector<char> RespSync; // Content
 
