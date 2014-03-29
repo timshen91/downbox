@@ -17,6 +17,7 @@ typedef SSIZE_T ssize_t;
 #include <limits.h>
 #include <type_traits>
 #include <vector>
+#include <string>
 #include "endian.h"
 
 #define error() do { throw std::string(__FILE__) + " " + std::to_string(__LINE__); } while (0)

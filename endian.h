@@ -2,7 +2,9 @@
 #define __ENDIAN_H__
 
 #include <stdint.h>
+#ifndef _WIN32
 #include <endian.h>
+#endif
 
 namespace {
 
@@ -37,6 +39,7 @@ uint_t<n> f<n>(uint_t<n> a) {\
     return g(a);\
 }
 
+#ifndef _WIN32
 ENDIAN_IMPL(1, letoh_impl, );
 ENDIAN_IMPL(2, letoh_impl, le16toh);
 ENDIAN_IMPL(4, letoh_impl, le32toh);
@@ -45,6 +48,16 @@ ENDIAN_IMPL(1, htole_impl, );
 ENDIAN_IMPL(2, htole_impl, htole16);
 ENDIAN_IMPL(4, htole_impl, htole32);
 ENDIAN_IMPL(8, htole_impl, htole64);
+#else
+ENDIAN_IMPL(1, letoh_impl, );
+ENDIAN_IMPL(2, letoh_impl, );
+ENDIAN_IMPL(4, letoh_impl, );
+ENDIAN_IMPL(8, letoh_impl, );
+ENDIAN_IMPL(1, htole_impl, );
+ENDIAN_IMPL(2, htole_impl, );
+ENDIAN_IMPL(4, htole_impl, );
+ENDIAN_IMPL(8, htole_impl, );
+#endif
 
 #undef ENDIAN_IMPL
 
