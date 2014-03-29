@@ -20,19 +20,25 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="protocol.h">
+    <ClInclude Include="..\..\directory.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="directory.h">
+    <ClInclude Include="..\..\endian.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="endian.h">
+    <ClInclude Include="..\..\path.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="socket.h">
+    <ClInclude Include="..\..\protocol.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="tuple.h">
+    <ClInclude Include="..\..\socket.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tool.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tuple.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

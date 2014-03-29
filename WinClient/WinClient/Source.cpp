@@ -1,11 +1,10 @@
-//#include <windows.h>
 #include <stdio.h>
 #include <tchar.h>
-#include "protocol.h"
 #include <iostream>
-#include "socket.h""
-//static link lib
-//#pragma comment(lib,"ws2_32.lib")
+#include <fstream>
+#include "../../socket.h"
+#include "../../protocol.h"
+#include "../../tool.h"
 
 using namespace std;
 #define PORT 9999
@@ -29,33 +28,21 @@ int monitor(){
 	int AddrLen = 0;
 	HANDLE hThread = NULL;
 
+
 	if (WSAStartup(MAKEWORD(2, 2), &ws) != 0) {
 		cout << "init socket failed" << GetLastError() << endl;
 		return -1;
 	}
-
-	client = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (client == INVALID_SOCKET) {
-		cout << "client socket create failed" << GetLastError() << endl;
-		return -1;
-	}
-
-	ServerAddr.sin_family = AF_INET;
-	ServerAddr.sin_addr.s_addr = inet_addr(IP_ADDRESS);
-	ServerAddr.sin_port = htons(PORT);
-	memset(ServerAddr.sin_zero,0x00,8);
-
-	Ret = connect(client, (struct sockaddr*)&ServerAddr, sizeof(ServerAddr));
-	if (Ret == SOCKET_ERROR) {
-		cout << "connect failed" << GetLastError() << endl;
-		return -1;
+	TCPSocket conn;
+	if (!conn.init(IP_ADDRESS, PORT)) {
+		cout << "fail init socket" << endl;
 	}
 	else {
-		cout << "success" << endl;
+		cout << "tcp success" << endl;
 	}
 
 	//init monitor
-	TCHAR *dir = _T("c:\\testFileChange");
+	TCHAR *dir = _T("c:\\Airpocket");
 	if (!CreateDirectory(dir, NULL)){
 		printf("File already exists.\n");
 	}
@@ -70,42 +57,53 @@ int monitor(){
 
 	char notify[2024];
 	FILE_NOTIFY_INFORMATION *pnotify = (FILE_NOTIFY_INFORMATION*)notify;
-	char str2[1024];
+	char Namestr[1024];
 
+	ReqCreateFile req;
 	while (TRUE){
 		if (ReadDirectoryChangesW(dirHandle, &notify, sizeof(notify), TRUE,
 			FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_DIR_NAME
 			| FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
-			&cbBytes, NULL, NULL)){
-			switch (pnotify->Action){
-			case FILE_ACTION_ADDED:
-				printf("file add %S.", pnotify->FileName);
-				printf("\n");
-				
-				break;
+			&cbBytes, NULL, NULL)) {
+			switch (pnotify->Action) {
+			case FILE_ACTION_ADDED: {
+										//show file_change info in console
+										wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
+										cout << "added   " << Namestr << endl;
+										//send file
+										conn << (uint8_t)CREATE_FILE;
+										req.get<0>().assign(Namestr);
+										ifstream fin(Namestr);
+										if (fin.fail()) {
+											cout << "init file stream fail";
+										}
+										if (!fin.bad()) {
+											cout << fin.rdbuf();
+											fin.close();
+										}
+										fin.seekg(0, ifstream::end);
+										req.get<1>().resize(fin.tellg());
+										fin.seekg(0,ifstream::beg);
+										fin.read(req.get<1>().data(), req.get<1>().size());
+										fin.close();
+										conn << req;
+										break;
+			}
 			case FILE_ACTION_MODIFIED:
-				WideCharToMultiByte(CP_ACP, 0, pnotify->FileName,
-					pnotify->FileNameLength / 2, str2, 99, NULL, NULL);
-				str2[pnotify->FileNameLength / 2] = '\0';
-				printf("modified----%d---%S", strlen(str2), str2);
-				printf("\n");
-				break;
+				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
+				cout << "modified  " << Namestr;
 			case FILE_ACTION_REMOVED:
-				printf("file removed.--%S--", pnotify->FileName);
-				printf("\n");
+				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
+				cout << "removed  " << Namestr << endl;
 				break;
 			case FILE_ACTION_RENAMED_OLD_NAME:
-				WideCharToMultiByte(CP_ACP, 0, pnotify->FileName,
-					NULL, NULL, NULL, NULL, NULL);
-				printf("rename %S", pnotify->FileName);
-				printf("\n");
+				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
+				cout << "renamed  " << Namestr << endl;
 				break;
 			case FILE_ACTION_RENAMED_NEW_NAME:
-				//FIXME 新文件名并不会显示
-				WideCharToMultiByte(CP_ACP, 0, pnotify->FileName,
-					NULL, NULL, NULL, NULL, NULL);
-				printf(" to %S ", pnotify->FileName);
-				printf("\n");
+				//FIXME new file name will not show
+				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
+				cout << "to name  " << Namestr << endl;
 				break;
 			default:
 				printf("unkonw action\n");

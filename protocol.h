@@ -4,6 +4,7 @@
 #include <vector>
 #include "string.h"
 #include "tuple.h"
+#include "path.h"
 
 enum Protocol : uint8_t {
     SYNC,

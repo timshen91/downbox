@@ -67,11 +67,13 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="directory.h" />
-    <ClInclude Include="endian.h" />
-    <ClInclude Include="protocol.h" />
-    <ClInclude Include="socket.h" />
-    <ClInclude Include="tuple.h" />
+    <ClInclude Include="..\..\directory.h" />
+    <ClInclude Include="..\..\endian.h" />
+    <ClInclude Include="..\..\path.h" />
+    <ClInclude Include="..\..\protocol.h" />
+    <ClInclude Include="..\..\socket.h" />
+    <ClInclude Include="..\..\tool.h" />
+    <ClInclude Include="..\..\tuple.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
