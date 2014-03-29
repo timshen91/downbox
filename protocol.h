@@ -4,6 +4,7 @@
 #include <vector>
 #include "string.h"
 #include "tuple.h"
+#include "path.h"
 
 enum Protocol : uint8_t {
     SYNC,
@@ -12,8 +13,6 @@ enum Protocol : uint8_t {
     CREATE_DIR,
     DELETE_,
 };
-
-class PathString;
 
 typedef PathString ReqSync; // Path
 typedef std::vector<char> RespSync; // Content

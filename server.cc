@@ -5,7 +5,6 @@
 #include <iostream>
 #include "socket.h"
 #include "protocol.h"
-#include "path.h"
 #include "directory.h"
 using namespace std;
 
