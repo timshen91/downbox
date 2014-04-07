@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>
-#include <fstream>
+#include <cassert>
 #include "../../socket.h"
 #include "../../protocol.h"
 #include "../../tool.h"
@@ -54,12 +54,12 @@ int monitor(){
 		NULL);
 
 	DWORD cbBytes;
-
 	char notify[2024];
 	FILE_NOTIFY_INFORMATION *pnotify = (FILE_NOTIFY_INFORMATION*)notify;
 	char Namestr[1024];
 
 	ReqCreateFile req;
+	assert(SetCurrentDirectory(dir));
 	while (TRUE){
 		if (ReadDirectoryChangesW(dirHandle, &notify, sizeof(notify), TRUE,
 			FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_DIR_NAME
@@ -77,16 +77,17 @@ int monitor(){
 										if (fin.fail()) {
 											cout << "init file stream fail";
 										}
-										if (!fin.bad()) {
-											cout << fin.rdbuf();
-											fin.close();
-										}
 										fin.seekg(0, ifstream::end);
 										req.get<1>().resize(fin.tellg());
 										fin.seekg(0,ifstream::beg);
-										fin.read(req.get<1>().data(), req.get<1>().size());
-										fin.close();
-										conn << req;
+										if (fin.tellg() > 0) {
+											fin.read(req.get<1>().data(), req.get<1>().size());
+											fin.close();
+											conn << req;
+										}
+										else {
+											conn << req;
+										}
 										break;
 			}
 			case FILE_ACTION_MODIFIED:
