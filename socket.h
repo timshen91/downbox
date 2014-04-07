@@ -5,6 +5,7 @@
 #include <WinSock2.h>
 #pragma comment(lib, "Ws2_32.lib")
 #include <stdint.h>
+#include <fstream>
 typedef SSIZE_T ssize_t;
 #define constexpr
 #else
