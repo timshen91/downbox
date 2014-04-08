@@ -1,6 +1,6 @@
 Readme
 ==========
-Default folder is set at ```C:\\testFileChange```
+Default folder is set at ```C:\\Airpocket```
 
 The program will create if not exit.
 
