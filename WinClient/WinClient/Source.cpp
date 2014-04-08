@@ -1,10 +1,7 @@
-//Function for now
-//1.push local file to cloud
-//2.delete from cloud
-
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>
+#include <fstream>
 #include <cassert>
 #include "../../socket.h"
 #include "../../protocol.h"
@@ -51,113 +48,32 @@ int monitor(){
 		printf("File already exists.\n");
 	}
 	HANDLE dirHandle = CreateFile(dir, FILE_LIST_DIRECTORY,
-			FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
-			NULL,
-			OPEN_EXISTING,
-			FILE_FLAG_BACKUP_SEMANTICS,
-			NULL);
+		FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
+		NULL,
+		OPEN_EXISTING,
+		FILE_FLAG_BACKUP_SEMANTICS,
+		NULL);
 
 	DWORD cbBytes;
+
 	char notify[2024];
 	FILE_NOTIFY_INFORMATION *pnotify = (FILE_NOTIFY_INFORMATION*)notify;
 	char Namestr[1024];
-<<<<<<< HEAD
-	ReqCreateFile req;
 
 	assert(SetCurrentDirectory(dir));
-=======
-
-<<<<<<< HEAD
-=======
-	ReqCreateFile req;
-	assert(SetCurrentDirectory(dir));
->>>>>>> dbd401db1ddb9bbf4dc8e7bd46bb2079369db9c5
->>>>>>> 10c11e03c05133f70e9c27a5180be9ac8a0a9252
 	while (TRUE){
 		if (ReadDirectoryChangesW(dirHandle, &notify, sizeof(notify), TRUE,
-					FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_DIR_NAME
-					| FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
-					&cbBytes, NULL, NULL)) {
+			FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_DIR_NAME
+			| FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
+			&cbBytes, NULL, NULL)) {
 			switch (pnotify->Action) {
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 10c11e03c05133f70e9c27a5180be9ac8a0a9252
-				case FILE_ACTION_ADDED: {
-																	//show file_change info in console
-																	wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-																	cout << "added   " << Namestr << endl;
-																	//send file
-<<<<<<< HEAD
-=======
-																	ReqCreateFile req;
->>>>>>> 10c11e03c05133f70e9c27a5180be9ac8a0a9252
-																	conn << (uint8_t)CREATE_FILE;
-																	req.get<0>().assign(Namestr);
-																	ifstream fin(Namestr);
-																	if (fin.fail()) {
-																		cout << "init file stream fail";
-																	}
-<<<<<<< HEAD
-=======
-																	if (!fin.bad()) {
-																		cout << fin.rdbuf();
-																		fin.close();
-																	}
->>>>>>> 10c11e03c05133f70e9c27a5180be9ac8a0a9252
-																	fin.seekg(0, ifstream::end);
-																	req.get<1>().resize(fin.tellg());
-																	fin.seekg(0,ifstream::beg);
-																	fin.read(req.get<1>().data(), req.get<1>().size());
-																	fin.close();
-																	conn << req;
-																	// TODO, list file every time it makes changes
-																	break;
-																}
-				case FILE_ACTION_MODIFIED:
-																wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-																cout << "modified  " << Namestr;
-<<<<<<< HEAD
-				case FILE_ACTION_REMOVED:{
-											 wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-											 cout << "removed  " << Namestr << endl;
-											 //delete file
-											 ReqDelete req;
-											 conn << (uint8_t)DELETE_;
-											 req.assign(Namestr);
-											 conn << req;
-											 break;
-				}
-=======
-				case FILE_ACTION_REMOVED:
-																wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-																cout << "removed  " << Namestr << endl;
-																//delete file
-																conn << (uint8_t)DELETE_;
-																ReqDelete req;
-																req.assign(Namestr);
-																conn << req;
-																break;
->>>>>>> 10c11e03c05133f70e9c27a5180be9ac8a0a9252
-				case FILE_ACTION_RENAMED_OLD_NAME:
-																wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-																cout << "renamed  " << Namestr << endl;
-																break;
-				case FILE_ACTION_RENAMED_NEW_NAME:
-																//FIXME new file name will not show
-																wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-																cout << "to name  " << Namestr << endl;
-																break;
-				default:
-																printf("unkonw action\n");
-<<<<<<< HEAD
-=======
-=======
 			case FILE_ACTION_ADDED: {
 										//show file_change info in console
 										wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
 										cout << "added   " << Namestr << endl;
 										//send file
+										//how to distinguish file and dir
+										ReqCreateFile req;
 										conn << (uint8_t)CREATE_FILE;
 										req.get<0>().assign(Namestr);
 										ifstream fin(Namestr);
@@ -166,24 +82,26 @@ int monitor(){
 										}
 										fin.seekg(0, ifstream::end);
 										req.get<1>().resize(fin.tellg());
-										fin.seekg(0,ifstream::beg);
-										if (fin.tellg() > 0) {
+										fin.seekg(0, ifstream::beg);
+										if (req.get<1>().size() > 0) {
 											fin.read(req.get<1>().data(), req.get<1>().size());
-											fin.close();
-											conn << req;
 										}
-										else {
-											conn << req;
-										}
+										fin.close();
+										conn << req;
 										break;
 			}
 			case FILE_ACTION_MODIFIED:
 				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
 				cout << "modified  " << Namestr;
-			case FILE_ACTION_REMOVED:
-				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-				cout << "removed  " << Namestr << endl;
-				break;
+			case FILE_ACTION_REMOVED:{
+										 wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
+										 cout << "removed  " << Namestr << endl;
+										 ReqDelete req;
+										 conn << (uint8_t)DELETE_;
+										 req.assign(Namestr);
+										 conn << req;
+										 break;
+			}
 			case FILE_ACTION_RENAMED_OLD_NAME:
 				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
 				cout << "renamed  " << Namestr << endl;
@@ -195,8 +113,6 @@ int monitor(){
 				break;
 			default:
 				printf("unkonw action\n");
->>>>>>> dbd401db1ddb9bbf4dc8e7bd46bb2079369db9c5
->>>>>>> 10c11e03c05133f70e9c27a5180be9ac8a0a9252
 			}
 		}
 	}
