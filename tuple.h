@@ -1,8 +1,6 @@
 #ifndef __TUPLE_H__
 #define __TUPLE_H__
 
-#include "socket.h"
-
 namespace {
 
 template<size_t i, typename T>
@@ -29,8 +27,8 @@ struct get_impl<0, T> {
     }
 };
 
-template<typename, typename...> struct read_tuple;
-template<typename, typename...> struct write_tuple;
+template<typename, typename, typename...> struct read_tuple;
+template<typename, typename, typename...> struct write_tuple;
 
 }
 
@@ -44,8 +42,8 @@ class Tuple {
 
     template<size_t, typename> friend struct get_type;
     template<size_t, typename> friend struct get_impl;
-    template<typename, typename...> friend struct read_tuple;
-    template<typename, typename...> friend struct write_tuple;
+    template<typename, typename, typename...> friend struct read_tuple;
+    template<typename, typename, typename...> friend struct write_tuple;
 
 public:
     Tuple() {}
@@ -66,8 +64,8 @@ class Tuple<T> {
 
     template<size_t, typename> friend struct get_type;
     template<size_t, typename> friend struct get_impl;
-    template<typename, typename...> friend struct read_tuple;
-    template<typename, typename...> friend struct write_tuple;
+    template<typename, typename, typename...> friend struct read_tuple;
+    template<typename, typename, typename...> friend struct write_tuple;
 
 public:
     Tuple() {}
@@ -82,54 +80,54 @@ public:
 
 namespace {
 
-template<typename T, typename... Args>
+template<typename IStreamT, typename T, typename... Args>
 struct read_tuple {
-    static TCPSocket& read(TCPSocket& cli, Tuple<T, Args...>& t) {
+    static IStreamT& read(IStreamT& cli, Tuple<T, Args...>& t) {
         return cli >> t.first >> t.second;
     }
 };
 
-template<typename T>
-struct read_tuple<T> {
-    static TCPSocket& read(TCPSocket& cli, Tuple<T>& t) {
+template<typename IStreamT, typename T>
+struct read_tuple<IStreamT, T> {
+    static IStreamT& read(IStreamT& cli, Tuple<T>& t) {
         return cli >> t.first;
     }
 };
 
-template<typename T, typename... Args>
+template<typename OStreamT, typename T, typename... Args>
 struct write_tuple {
-    static TCPSocket& write(TCPSocket& cli, const Tuple<T, Args...>& t) {
+    static OStreamT& write(OStreamT& cli, const Tuple<T, Args...>& t) {
         return cli << t.first << t.second;
     }
 };
 
-template<typename T>
-struct write_tuple<T> {
-    static TCPSocket& write(TCPSocket& cli, const Tuple<T>& t) {
+template<typename OStreamT, typename T>
+struct write_tuple<OStreamT, T> {
+    static OStreamT& write(OStreamT& cli, const Tuple<T>& t) {
         return cli << t.first;
     }
 };
 
 }
 
-template<typename T, typename... Args>
-TCPSocket& operator>>(TCPSocket& cli, Tuple<T, Args...>& t) {
-    return read_tuple<T, Args...>::read(cli, t);
+template<typename IStreamT, typename T, typename... Args>
+IStreamT& operator>>(IStreamT& cli, Tuple<T, Args...>& t) {
+    return read_tuple<IStreamT, T, Args...>::read(cli, t);
 }
 
-template<typename T>
-TCPSocket& operator>>(TCPSocket& cli, Tuple<T>& t) {
-    return read_tuple<T>::read(cli, t);
+template<typename IStreamT, typename T>
+IStreamT& operator>>(IStreamT& cli, Tuple<T>& t) {
+    return read_tuple<IStreamT, T>::read(cli, t);
 }
 
-template<typename T, typename... Args>
-TCPSocket& operator<<(TCPSocket& cli, const Tuple<T, Args...>& t) {
-    return write_tuple<T, Args...>::write(cli, t);
+template<typename OStreamT, typename T, typename... Args>
+OStreamT& operator<<(OStreamT& cli, const Tuple<T, Args...>& t) {
+    return write_tuple<OStreamT, T, Args...>::write(cli, t);
 }
 
-template<typename T>
-TCPSocket& operator<<(TCPSocket& cli, const Tuple<T>& t) {
-    return write_tuple<T>::write(cli, t);
+template<typename OStreamT, typename T>
+OStreamT& operator<<(OStreamT& cli, const Tuple<T>& t) {
+    return write_tuple<OStreamT, T>::write(cli, t);
 }
 
 #endif
