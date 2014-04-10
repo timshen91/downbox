@@ -58,7 +58,7 @@ int monitor(){
 
 	char notify[2024];
 	FILE_NOTIFY_INFORMATION *pnotify = (FILE_NOTIFY_INFORMATION*)notify;
-	char Namestr[1024];
+	string Name;
 
 	assert(SetCurrentDirectory(dir));
 	while (TRUE){
@@ -66,17 +66,30 @@ int monitor(){
 			FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_DIR_NAME
 			| FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE,
 			&cbBytes, NULL, NULL)) {
+			Name.resize(pnotify->FileNameLength / sizeof(*pnotify->FileName));
+			wchar_to_char(pnotify->FileName, &Name.front(), pnotify->FileNameLength);
+			const char* Namestr = Name.data();
+			auto remoteFileName = Name;
+			//for (int i = 0; i < remoteFileName.size(); i++) { // Stupid version
+			//	if (remoteFileName[i] == '\\') {
+			//	 remoteFileName[i] = '/';
+			//	}
+			//}
+			for (auto& ch : remoteFileName) { // Tim's smart and fancy C++11 version
+				if (ch == '\\') {
+					ch = '/';
+				}
+			}
 			switch (pnotify->Action) {
 			case FILE_ACTION_ADDED: {
 										//show file_change info in console
-										wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-										cout << "added   " << Namestr << endl;
+										cout << "added   " << remoteFileName << endl;
 										auto testdir = GetFileAttributes(Namestr);
 										if (testdir & FILE_ATTRIBUTE_DIRECTORY) {
 											//mkdir
 											ReqCreateDir req;
 											conn << (uint8_t)CREATE_DIR;
-											req.assign(Namestr);
+											req.assign(remoteFileName);
 											conn << req;
 										}
 										else {
@@ -84,7 +97,7 @@ int monitor(){
 											//how to distinguish file and dir
 											ReqCreateFile req;
 											conn << (uint8_t)CREATE_FILE;
-											req.get<0>().assign(Namestr);
+											req.get<0>().assign(remoteFileName);
 											ifstream fin(Namestr);
 											if (fin.fail()) {
 												cout << "init file stream fail";
@@ -97,28 +110,25 @@ int monitor(){
 											}
 											fin.close();
 											conn << req;
-											break;
 										}
+										break;
 			}
 			case FILE_ACTION_MODIFIED:
-				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
-				cout << "modified  " << Namestr;
+				cout << "modified  " << Namestr << endl;
+				break;
 			case FILE_ACTION_REMOVED:{
-										 wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
 										 cout << "removed  " << Namestr << endl;
 										 ReqDelete req;
 										 conn << (uint8_t)DELETE_;
-										 req.assign(Namestr);
+										 req.assign(remoteFileName);
 										 conn << req;
 										 break;
 			}
 			case FILE_ACTION_RENAMED_OLD_NAME:
-				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
 				cout << "renamed  " << Namestr << endl;
 				break;
 			case FILE_ACTION_RENAMED_NEW_NAME:
 				//FIXME new file name will not show
-				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
 				cout << "to name  " << Namestr << endl;
 				break;
 			default:
