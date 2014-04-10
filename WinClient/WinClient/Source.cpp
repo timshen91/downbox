@@ -71,24 +71,34 @@ int monitor(){
 										//show file_change info in console
 										wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
 										cout << "added   " << Namestr << endl;
-										//send file
-										//how to distinguish file and dir
-										ReqCreateFile req;
-										conn << (uint8_t)CREATE_FILE;
-										req.get<0>().assign(Namestr);
-										ifstream fin(Namestr);
-										if (fin.fail()) {
-											cout << "init file stream fail";
+										auto testdir = GetFileAttributes(Namestr);
+										if (testdir & FILE_ATTRIBUTE_DIRECTORY) {
+											//mkdir
+											ReqCreateDir req;
+											conn << (uint8_t)CREATE_DIR;
+											req.assign(Namestr);
+											conn << req;
 										}
-										fin.seekg(0, ifstream::end);
-										req.get<1>().resize(fin.tellg());
-										fin.seekg(0, ifstream::beg);
-										if (req.get<1>().size() > 0) {
-											fin.read(req.get<1>().data(), req.get<1>().size());
+										else {
+											//send file
+											//how to distinguish file and dir
+											ReqCreateFile req;
+											conn << (uint8_t)CREATE_FILE;
+											req.get<0>().assign(Namestr);
+											ifstream fin(Namestr);
+											if (fin.fail()) {
+												cout << "init file stream fail";
+											}
+											fin.seekg(0, ifstream::end);
+											req.get<1>().resize(fin.tellg());
+											fin.seekg(0, ifstream::beg);
+											if (req.get<1>().size() > 0) {
+												fin.read(req.get<1>().data(), req.get<1>().size());
+											}
+											fin.close();
+											conn << req;
+											break;
 										}
-										fin.close();
-										conn << req;
-										break;
 			}
 			case FILE_ACTION_MODIFIED:
 				wchar_to_char(pnotify->FileName, Namestr, pnotify->FileNameLength);
