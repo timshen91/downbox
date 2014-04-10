@@ -4,9 +4,6 @@
 class PathString : public std::string {
     typedef std::string BaseT;
 
-    friend TCPSocket& operator>>(TCPSocket&, PathString&);
-    friend TCPSocket& operator<<(TCPSocket&, const PathString&);
-
     static std::vector<std::string> split(const std::string& s, char ch) {
         size_t last = 0;
         std::vector<std::string> ret;
@@ -49,15 +46,15 @@ public:
     }
 };
 
-inline
-TCPSocket& operator>>(TCPSocket& cli, PathString& s) {
+template<typename IStreamT>
+IStreamT& operator>>(IStreamT& cli, PathString& s) {
     cli >> static_cast<std::string&>(s);
     s.sanitize();
     return cli;
 }
 
-inline
-TCPSocket& operator<<(TCPSocket& cli, const PathString& s) {
+template<typename OStreamT>
+OStreamT& operator<<(OStreamT& cli, const PathString& s) {
     return cli << static_cast<const std::string&>(s);
 }
 
