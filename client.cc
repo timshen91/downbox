@@ -6,11 +6,11 @@
 using namespace std;
 
 void print_usage(char* argv[]) {
-    cout << "Usage : " << argv[0] << " list|create|mkdir|delete filename\n";
+    cout << "Usage : " << argv[0] << " list|create|mkdir|delete|move filename [filename]...\n";
 }
 
 int main(int argc, char* argv[]) { 
-    if (argc != 3) {
+    if (argc < 3) {
         print_usage(argv);
         return 1;
     }
@@ -63,6 +63,12 @@ int main(int argc, char* argv[]) {
         conn << (uint8_t)DELETE_;
         ReqDelete req;
         req.assign(argv[2]);
+        conn << req;
+    } else if (cmd == "move") {
+        conn << (uint8_t)MOVE;
+        ReqMove req;
+        req.get<0>().assign(argv[2]);
+        req.get<1>().assign(argv[3]);
         conn << req;
     } else {
         print_usage(argv);

@@ -104,6 +104,12 @@ static void handle_delete(TCPSocket& cli, const string& home) {
     delete_recursive(home + move(req));
 }
 
+static void handle_move(TCPSocket& cli, const string& home) {
+    ReqMove req;
+    cli >> req;
+    ensure(rename((home + req.get<0>()).data(), (home + req.get<1>()).data()) >= 0);
+}
+
 TCPServer server;
 
 static void sigint_handler(int signal) {
@@ -120,6 +126,7 @@ static void (*cb_table[])(TCPSocket&, const string&) = {
     [CREATE_FILE] = &handle_create_file,
     [CREATE_DIR] = &handle_mkdir,
     [DELETE_] = &handle_delete,
+    [MOVE] = &handle_move,
 };
 
 int main() {

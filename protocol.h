@@ -12,6 +12,7 @@ enum Protocol : uint8_t {
     CREATE_FILE,
     CREATE_DIR,
     DELETE_,
+    MOVE,
 };
 
 typedef PathString ReqSync; // Path
@@ -30,6 +31,9 @@ typedef PathString ReqCreateDir; // Directory path
 // No response
 
 typedef PathString ReqDelete; // File/directory path
+// No response
+
+typedef Tuple<PathString, PathString> ReqMove; // source path; destination path
 // No response
 
 #endif
