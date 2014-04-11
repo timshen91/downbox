@@ -27,8 +27,7 @@ struct get_impl<0, T> {
     }
 };
 
-template<typename, typename, typename...> struct read_tuple;
-template<typename, typename, typename...> struct write_tuple;
+template<typename, typename, typename...> struct rw_tuple;
 
 }
 
@@ -42,8 +41,7 @@ class Tuple {
 
     template<size_t, typename> friend struct get_type;
     template<size_t, typename> friend struct get_impl;
-    template<typename, typename, typename...> friend struct read_tuple;
-    template<typename, typename, typename...> friend struct write_tuple;
+    template<typename, typename, typename...> friend struct rw_tuple;
 
 public:
     Tuple() {}
@@ -64,8 +62,7 @@ class Tuple<T> {
 
     template<size_t, typename> friend struct get_type;
     template<size_t, typename> friend struct get_impl;
-    template<typename, typename, typename...> friend struct read_tuple;
-    template<typename, typename, typename...> friend struct write_tuple;
+    template<typename, typename, typename...> friend struct rw_tuple;
 
 public:
     Tuple() {}
@@ -80,30 +77,24 @@ public:
 
 namespace {
 
-template<typename IStreamT, typename T, typename... Args>
-struct read_tuple {
-    static IStreamT& read(IStreamT& cli, Tuple<T, Args...>& t) {
+template<typename StreamT, typename T, typename... Args>
+struct rw_tuple {
+    static StreamT& read(StreamT& cli, Tuple<T, Args...>& t) {
         return cli >> t.first >> t.second;
     }
-};
 
-template<typename IStreamT, typename T>
-struct read_tuple<IStreamT, T> {
-    static IStreamT& read(IStreamT& cli, Tuple<T>& t) {
-        return cli >> t.first;
-    }
-};
-
-template<typename OStreamT, typename T, typename... Args>
-struct write_tuple {
-    static OStreamT& write(OStreamT& cli, const Tuple<T, Args...>& t) {
+    static StreamT& write(StreamT& cli, const Tuple<T, Args...>& t) {
         return cli << t.first << t.second;
     }
 };
 
-template<typename OStreamT, typename T>
-struct write_tuple<OStreamT, T> {
-    static OStreamT& write(OStreamT& cli, const Tuple<T>& t) {
+template<typename StreamT, typename T>
+struct rw_tuple<StreamT, T> {
+    static StreamT& read(StreamT& cli, Tuple<T>& t) {
+        return cli >> t.first;
+    }
+
+    static StreamT& write(StreamT& cli, const Tuple<T>& t) {
         return cli << t.first;
     }
 };
@@ -112,22 +103,12 @@ struct write_tuple<OStreamT, T> {
 
 template<typename IStreamT, typename T, typename... Args>
 IStreamT& operator>>(IStreamT& cli, Tuple<T, Args...>& t) {
-    return read_tuple<IStreamT, T, Args...>::read(cli, t);
-}
-
-template<typename IStreamT, typename T>
-IStreamT& operator>>(IStreamT& cli, Tuple<T>& t) {
-    return read_tuple<IStreamT, T>::read(cli, t);
+    return rw_tuple<IStreamT, T, Args...>::read(cli, t);
 }
 
 template<typename OStreamT, typename T, typename... Args>
 OStreamT& operator<<(OStreamT& cli, const Tuple<T, Args...>& t) {
-    return write_tuple<OStreamT, T, Args...>::write(cli, t);
-}
-
-template<typename OStreamT, typename T>
-OStreamT& operator<<(OStreamT& cli, const Tuple<T>& t) {
-    return write_tuple<OStreamT, T>::write(cli, t);
+    return rw_tuple<OStreamT, T, Args...>::write(cli, t);
 }
 
 #endif
