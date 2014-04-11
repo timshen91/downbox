@@ -2,7 +2,6 @@
 #define __PROTOCOL_H__
 
 #include <vector>
-#include "string.h"
 #include "tuple.h"
 #include "path.h"
 
