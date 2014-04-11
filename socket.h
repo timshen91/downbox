@@ -19,7 +19,6 @@ typedef SSIZE_T ssize_t;
 #include <type_traits>
 #include <vector>
 #include <string>
-#include "endian.h"
 
 #define error() do { throw std::string(__FILE__) + " " + std::to_string(__LINE__); } while (0)
 
@@ -184,14 +183,12 @@ public:
 template<typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator>>(TCPSocket& cli, T& obj) {
     cli.read(&obj, 1);
-    obj = letoh(obj);
     return cli;
 }
 
 template<typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, TCPSocket&>::type operator<<(TCPSocket& cli, const T& obj) {
-    auto o = htole(obj);
-    cli.write(&o, 1);
+    cli.write(&obj, 1);
     return cli;
 }
 
