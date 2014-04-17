@@ -19,17 +19,16 @@ template<typename... Args>
 class Tuple {};
 
 template<typename T, typename... Args>
-class Tuple<T, Args...> {
+class Tuple<T, Args...> : public Tuple<Args...> {
     T first;
-    Tuple<Args...> second;
 
     typedef T first_type;
-    typedef Tuple<Args...> second_type;
+    typedef Tuple<Args...> rest_type;
 
 public:
     Tuple() {}
-    Tuple(const T& f, const Args&... args) : first(f), second(args...) {}
-    Tuple(T&& f, Args&&... args) : first(std::move(f)), second(std::move(args)...) {}
+    Tuple(const T& f, const Args&... args) : rest_type(args...), first(f) {}
+    Tuple(T&& f, Args&&... args) : rest_type(std::move(args)...), first(std::move(f)) {}
 
     first_type& get_first() {
         return first;
@@ -39,12 +38,12 @@ public:
         return first;
     }
 
-    second_type& get_rest() {
-        return second;
+    rest_type& get_rest() {
+        return *this;
     }
 
-    const second_type& get_rest() const {
-        return second;
+    const rest_type& get_rest() const {
+        return *this;
     }
 
     template<size_t i>
