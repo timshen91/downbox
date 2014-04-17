@@ -13,22 +13,6 @@ struct get_type<0, T> {
     typedef typename T::first_type type;
 };
 
-template<size_t i, typename T>
-struct get_impl {
-    static constexpr typename get_type<i, T>::type& get(T& t) {
-        return get_impl<i-1, typename T::second_type>::get(t.second);
-    }
-};
-
-template<typename T>
-struct get_impl<0, T> {
-    static constexpr typename get_type<0, T>::type& get(T& t) {
-        return t.first;
-    }
-};
-
-template<typename, typename...> struct rw_tuple;
-
 }
 
 template<typename... Args>
@@ -53,12 +37,24 @@ public:
     Tuple(T&& f, Args&&... args) : first(std::move(f)), second(std::move(args)...) {}
 
     template<size_t i>
-    typename get_type<i, Tuple<T, Args...>>::type& get() {
-        return get_impl<i, Tuple<T, Args...>>::get(*this);
-    }
+    typename get_type<i, Tuple<T, Args...>>::type& get();
 };
 
 namespace {
+
+template<size_t i, typename T>
+struct get_impl {
+    static constexpr typename get_type<i, T>::type& get(T& t) {
+        return get_impl<i-1, typename T::second_type>::get(t.second);
+    }
+};
+
+template<typename T>
+struct get_impl<0, T> {
+    static constexpr typename get_type<0, T>::type& get(T& t) {
+        return t.first;
+    }
+};
 
 template<typename StreamT, typename... Args>
 struct rw_tuple {
@@ -82,6 +78,12 @@ struct rw_tuple<StreamT, T, Args...> {
     }
 };
 
+}
+
+template<typename T, typename... Args>
+template<size_t i>
+typename get_type<i, Tuple<T, Args...>>::type& Tuple<T, Args...>::get() {
+    return get_impl<i, Tuple<T, Args...>>::get(*this);
 }
 
 template<typename IStreamT, typename... Args>
